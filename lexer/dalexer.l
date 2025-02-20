@@ -41,7 +41,10 @@
 L [A-Za-z]
 D [0-9]
 W [ \t\n\r]
-ESC [\n\t\r\0\\\'\"\x00-\xff]
+ESC_SIMPLE  \\[ntr0'"\\]
+ESC_HEX     \\x[0-9a-f]{2}
+ESC         ({ESC_SIMPLE}|{ESC_HEX})
+STRCHAR     [ -~]
 
 %%
 "and"       { return T_and; }
@@ -80,7 +83,9 @@ ESC [\n\t\r\0\\\'\"\x00-\xff]
 {L}({L}|{D}|_)* { return T_id; }
 {D}+            { return T_const; }
 
-'{L}|{D}|{ESC}'      { return T_char; }
+'({D}|{L}|{ESC})'   { return T_char; }
+
+\"({STRCHAR}*)\"    { return T_str; }
 
 {W}+                        { /*nothing*/ }
 \#.*\n                      { /*nothing*/ }
