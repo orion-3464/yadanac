@@ -1,0 +1,5 @@
+var i
+is int
+var x y z is int
+var s
+is byte [80]
