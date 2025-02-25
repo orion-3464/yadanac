@@ -36,8 +36,6 @@
 #define T_const 1030
 #define T_str   1031
 #define T_char  1032
-
-int nested_comments = 0;
 %}
 
 L [A-Za-z]
@@ -47,8 +45,6 @@ ESC_SIMPLE  \\[ntr0'"\\]
 ESC_HEX     \\x[0-9a-f]{2}
 ESC         ({ESC_SIMPLE}|{ESC_HEX})
 STRCHAR     [ -~]
-
-%x COMMENT
 
 %%
 "and"       { return T_and; }
