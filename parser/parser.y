@@ -1,7 +1,7 @@
 %{ 
 #include <stdio.h>
 #include <stdlib.h>
-#include "scanner.h"
+#include "lexer.h"
 %}
 
 %token T_and   "and"

@@ -1,5 +1,8 @@
 %{
-#define T_eof   0
+#include "lexer.h"
+#include "parser.h"
+
+#define T_eof 0
 %}
 
 L [A-Za-z]
