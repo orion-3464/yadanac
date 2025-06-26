@@ -1,7 +1,7 @@
 %{ 
 #include <stdio.h>
 #include <stdlib.h>
-#include "lexer.h"
+#include "scanner.h"
 %}
 
 %token T_eof   0
@@ -31,25 +31,29 @@
 %token T_true  "true"
 %token T_var   "var"
 
+%token T_id 
+%token T_const 
+%token T_str   
+%token T_char  
+
 %token T_asgn  
 %token T_col   
 %token T_geq   
 %token T_leq   
 %token T_neq   
 
-%token T_id    
-%token T_const 
-%token T_str   
-%token T_char  
-
-
 %%
 
-program : stmt_list ;
+program : stmt_list 
+		;
 
-stmt_list : /*nothing*/ | stmt_list stmt ;
+stmt_list	: /*nothing*/ 
+			| stmt_list stmt 
+			;
 
-stmt : ;
+stmt	: "var" T_id "is" expr
+		| 
+;
 
 %%
 
@@ -60,6 +64,6 @@ void yyerror(const char *msg) {
 
 int main() {
 	int res = yyparse();
-	if (res = 0) print("Succesful parsing\n");
+	(res == 0) ? printf("Successful parsing\n") : printf("Error in parsing\n");
 	return res;
 }
