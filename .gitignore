@@ -3,3 +3,4 @@ lexer/lexer
 
 *.o
 dc
+lexer.c parser.c parser.h parser.output
