@@ -40,6 +40,14 @@
 %token T_str   
 %token T_char  
 
+%left "or"
+%left "and"
+%right UNOTNOT
+%nonassoc '=' "<>" '>' '<' "<=" ">="
+%left '+' '-' '|'
+%left '*' '/' '%' '&'
+%right UPLUS UMINUS UNOT
+
 %%
 
 program : func_def
@@ -144,10 +152,10 @@ l_value : T_id
 expr    : T_const
         | T_char
         | l_value
-        |'(' expr ')'
+        | '(' expr ')' 
         | func_call
-        | '+' expr
-        | '-' expr
+        | '+' expr %prec UPLUS
+        | '-' expr %prec UMINUS
         | expr '+' expr
         | expr '-' expr
         | expr '*' expr
@@ -155,7 +163,7 @@ expr    : T_const
         | expr '%' expr
         | "true"
         | "false"
-        | '!' expr
+        | '!' expr %prec UNOT
         | expr '&' expr
         | expr '|' expr
         ;
@@ -180,7 +188,7 @@ one_expr    : %empty
 
 cond    : expr 
         | '(' cond ')'
-        | "not" cond
+        | "not" cond %prec UNOTNOT
         | cond "and" cond
         | cond "or" cond
         | expr '=' expr
