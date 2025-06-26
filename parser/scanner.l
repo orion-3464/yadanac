@@ -10,6 +10,8 @@ ESC_HEX     \\x[0-9a-f]{2}
 ESC         ({ESC_SIMPLE}|{ESC_HEX})
 STRCHAR     [ -~]
 
+%option noyywrap
+
 %%
 "and"       { return T_and; }
 "as"        { return T_as; }
