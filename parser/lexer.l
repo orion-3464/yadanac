@@ -64,6 +64,6 @@ STRCHAR     [ -~]
 
 "(*"(.|\n)*"*)"             {/*nothing*/}
 
-.   { fprintf(stderr, "illegal token\n"); exit(1); }
+.   { fprintf(stderr, "Illegal character %c at line %dn", yytext[0], lineno); exit(42); }
 %%
 
