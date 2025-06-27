@@ -4,6 +4,7 @@ lexer/lexer
 *.o
 dc
 lexer.c 
+lexer.cpp
 parser.c 
 parser.h 
 parser.output
