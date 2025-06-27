@@ -1,0 +1,21 @@
+def main
+    def add is int: x as int, y as ref int, z as byte [], w as byte [][100], u as int [][100][3]
+        var nikos is int
+        var alex is byte
+    begin
+        x := z[0] + (w[0][50] + u[1+3][1][1])   
+    end
+
+    def void_func: o as ref int, p as int
+        var t is int
+    begin
+        skip
+        t := o
+    end
+
+    var temp is int
+begin
+    void_func: 5, (5+3)
+
+    temp := add(alpha, beta, gamma, delta)
+end 
