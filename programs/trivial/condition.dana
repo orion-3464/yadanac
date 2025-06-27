@@ -1,0 +1,12 @@
+def main
+    var x y is int
+
+begin
+    x := 1
+    y := 2
+
+    if x > y:
+    begin
+        break : nikos
+    end
+end
