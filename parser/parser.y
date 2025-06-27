@@ -42,11 +42,11 @@
 
 %left "or"
 %left "and"
-%right UNOTNOT
+%precedence UNOTNOT
 %nonassoc '=' "<>" '>' '<' "<=" ">="
 %left '+' '-' '|'
 %left '*' '/' '%' '&'
-%right UPLUS UMINUS UNOT
+%precedence UPLUS UMINUS UNOT
 
 %%
 
