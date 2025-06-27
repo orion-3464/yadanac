@@ -3,6 +3,8 @@
 #include "parser.h"
 
 #define T_eof 0
+
+int lineno = 1;
 %}
 
 L [A-Za-z]
@@ -56,8 +58,9 @@ STRCHAR     [ -~]
 
 \"({STRCHAR}*)\"    { return T_str; }
 
+\n                          { ++lineno; }
 {W}+                        { /*nothing*/ }
-\#.*\n                      { /*nothing*/ }
+\#.*\n                      { ++lineno; }
 
 "(*"(.|\n)*"*)"             {/*nothing*/}
 
