@@ -48,6 +48,8 @@
 %left '*' '/' '%' '&'
 %precedence UPLUS UMINUS UNOT
 
+%expect 2
+
 %%
 
 program : func_def
