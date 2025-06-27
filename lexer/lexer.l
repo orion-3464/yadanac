@@ -157,7 +157,7 @@ STRCHAR     [ -~]
 int main() {
   int token;
   ident_levels.push(0);
-  
+
   do {
     token = yylex();
     printf("token = %d, lexeme = %s\n", token, yytext);
@@ -167,3 +167,4 @@ int main() {
   printf("\n Scanned text consists of %d blocks\n", blocks);
   return 0;
 }
+        
