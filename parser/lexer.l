@@ -49,6 +49,8 @@ STRCHAR     [ -~]
 ">="        { return T_geq; }
 "<>"        { return T_neq; }
 
+^[ \t]+ 
+
 [\+\-\*\/\%\!\&\|\=\<\>\(\)\[\]\,] { return yytext[0]; }
 
 {L}({L}|{D}|_)* { return T_id; }
