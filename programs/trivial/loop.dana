@@ -1,0 +1,31 @@
+def main
+    var i is int
+    var x is int
+
+begin
+    i := 0
+
+    loop:
+    begin
+        i := i + 1
+
+        if(i > 10):
+        begin
+            x := 42
+        end
+        elif(x > 20):
+        begin
+            x := 17
+        end
+
+        elif(x > 30):
+        begin
+            skip
+        end
+
+        else:
+        begin
+            break
+        end 
+    end
+end
