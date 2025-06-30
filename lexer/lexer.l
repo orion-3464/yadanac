@@ -1,8 +1,8 @@
-%{
+%top{
 #include <cstdio>
-#include <stack>
-#include <deque>
+}
 
+%{
 #define T_eof   0
 
 #define T_and   1000
@@ -42,129 +42,99 @@
 #define T_char  1032
 
 #define T_auto_end 1033
-
-std::deque<int> tokenq;
-
-int lineno = 1;
-
-int identation_level = 0;
-int blocks = 1;
-
-std::stack<int> ident_levels;
 %}
 
-L [A-Za-z]
-D [0-9]
-ESC_SIMPLE  \\[ntr0'"\\]
-ESC_HEX     \\x[0-9a-f]{2}
+/* LEXER DEFINITIONS */
+
+L [[:alpha:]]
+D [[:digit:]]
+S [[:blank:]]
+P [[:punct:]]{-}[\\\"\']
+ESC_SIMPLE  \\[ntr0\'\"\\]
+ESC_HEX     \\x[[:xdigit:]]{2}
 ESC         ({ESC_SIMPLE}|{ESC_HEX})
-STRCHAR     [ -~]
+
+/* LEXER STARTING STATES */
 
 %x COMMENT
 
-%option noyywrap
+/* LEXER OPTIONS */
+
+%option outfile="lexer.cpp"
+%option yylineno noyywrap
+%option c++ pointer 
 
 %%
+
+\n
     
-    if(!tokenq.empty()) {
-        int cur_token = tokenq.front();
-        tokenq.pop_front();
-        return cur_token;
-    }
+"and"       return T_and; 
+"as"        return T_as;
+"begin"     return T_begin; 
+"break"     return T_break;
+"byte"      return T_byte; 
+"continue"  return T_cont; 
+"decl"      return T_decl; 
+"def"       return T_def; 
+"elif"      return T_elif; 
+"else"      return T_else; 
+"end"       return T_end; 
+"exit"      return T_exit; 
+"false"     return T_false; 
+"if"        return T_if; 
+"is"        return T_is; 
+"int"       return T_int; 
+"loop"      return T_loop;
+"not"       return T_not;
+"or"        return T_or;
+"ref"       return T_ref; 
+"return"    return T_ret; 
+"skip"      return T_skip; 
+"true"      return T_true; 
+"var"       return T_var; 
+":="        return T_asgn; 
+":"         return T_col; 
+"<="        return T_leq; 
+">="        return T_geq; 
+"<>"        return T_neq; 
 
-"and"       { tokenq.push_back(T_and); }
-"as"        { tokenq.push_back(T_as); }
-"begin"     { tokenq.push_back(T_begin); }
-"break"     { tokenq.push_back(T_break); }
-"byte"      { tokenq.push_back(T_byte); }
-"continue"  { tokenq.push_back(T_cont); }
-"decl"      { tokenq.push_back(T_decl); }
-"def"       { tokenq.push_back(T_def); }
-"elif"      { tokenq.push_back(T_elif); }
-"else"      { tokenq.push_back(T_else); }
-"end"       { tokenq.push_back(T_end); }
-"exit"      { tokenq.push_back(T_exit); }
-"false"     { tokenq.push_back(T_false); }
-"if"        { tokenq.push_back(T_if); }
-"is"        { tokenq.push_back(T_is); }
-"int"       { tokenq.push_back(T_int); }
-"loop"      { tokenq.push_back(T_loop); }
-"not"       { tokenq.push_back(T_not); }
-"or"        { tokenq.push_back(T_or); }
-"ref"       { tokenq.push_back(T_ref); }
-"return"    { tokenq.push_back(T_ret); }
-"skip"      { tokenq.push_back(T_skip); }
-"true"      { tokenq.push_back(T_true); }
-"var"       { tokenq.push_back(T_var); }
+[\+\-\*\/\%\!\&\|\=\<\>\(\)\[\]\,]  return yytext[0]; 
 
-":="        { tokenq.push_back(T_asgn); }
-":"         { tokenq.push_back(T_col); }
-"<="        { tokenq.push_back(T_leq); }
-">="        { tokenq.push_back(T_geq); }
-"<>"        { tokenq.push_back(T_neq); }
+{L}({L}|{D}|_)*     return T_id; 
+{D}+                return T_const; 
 
-[\+\-\*\/\%\!\&\|\=\<\>\(\)\[\]\,] { tokenq.push_back(yytext[0]); }
+'({D}|{L}|{ESC}|{P}|" ")'   return T_char; 
 
-{L}({L}|{D}|_)* { tokenq.push_back(T_id); }
-{D}+            { tokenq.push_back(T_const); }
 
-'({D}|{L}|{ESC})'   { tokenq.push_back(T_char); }
+{S}                         { /*nothing*/ }
 
-\"({STRCHAR}*)\"    { tokenq.push_back(T_str); }
+    /* STRING RULE */
+\"({L}|{D}|{ESC}|{S}|{P})*\"    return T_str;
 
-\n                          { ++lineno; printf("I am counting a new line\n");}
-\r+                         { /*nothing*/ }
-^[ \t]+                     {   
-                                char *word = yytext;
-                                int spaces = 0;
-                                while(*word) {
-                                    if(*word == ' ') ++spaces;
-                                    if(*word == '\t') spaces += 4;
-                                    ++word;
-                                }
-                                
-                                if(spaces > identation_level) {
-                                    identation_level = spaces;
-                                    ident_levels.push(identation_level);
-                                    printf("identation level is %d\n", identation_level);
+    /* COMMENT RULES */
 
-                                }
-                                else {
-                                    identation_level = spaces;
-                                    int current_level = ident_levels.top();
-                                    while(current_level > identation_level) {
-                                        ident_levels.pop();
-                                        ++blocks;
-                                        printf("I am counting a block!!!!\n");
-                                        printf("identation level is %d\n", current_level);
-                                        current_level = ident_levels.top();
-                                        tokenq.push_back(T_auto_end);
-                                    }
-                                }
-                            }
-[ \t]                       { /*nothing*/ }
+\#.*\n                      { /* ignore one-line comments */ }
 
-\#.*\n                      { ++lineno; printf("I am counting a single line comment\n");}
 "(*"                        { BEGIN(COMMENT); }
-<COMMENT>"*)"               { BEGIN(INITIAL); }
-<COMMENT>\n                 { ++lineno; printf("I am counting a line in a multiline comment\n");}
-<COMMENT>"*"                { /*nothing*/ }
-<COMMENT>[^*\n]+            { /*nothing*/ }    
+<COMMENT>[^*]*              { /*nothing*/ }
+<COMMENT>"*"+[^*)]*         { /*nothing*/ }
+<COMMENT>"*"+")"            { BEGIN(INITIAL); }
+
+    /* NOTHING MATCHED */
 
 .   { fprintf(stderr, "illegal token\n"); exit(1); }
 %%
 
 int main() {
-  int token;
-  ident_levels.push(0);
+    FlexLexer *scanner = new yyFlexLexer;
+    int token;
 
-  do {
-    token = yylex();
-    printf("token = %d, lexeme = %s\n", token, yytext);
-  } while (token != T_eof);
+    do {
+        token = scanner->yylex();
+        printf("token = %d, lexeme = %s\n", token, scanner->YYText());
+    } while (token != T_eof);
 
-  printf("\n Scanned text consists of %d lines\n", lineno);
-  printf("\n Scanned text consists of %d blocks\n", blocks);
-  return 0;
-}
-        
+    printf("\n Scanned text consists of %d lines\n", scanner->lineno());
+    delete scanner;
+    return 0;
+}        

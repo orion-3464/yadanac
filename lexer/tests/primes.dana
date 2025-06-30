@@ -24,7 +24,7 @@ counter := 0
 if limit >= 2:
 counter := counter + 1
 writeInteger: 2
-writeString: ”\n”
+writeString: "\n"
 if limit >= 3:
 counter := counter + 1
 writeInteger: 3
