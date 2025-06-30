@@ -3,7 +3,5 @@
 "Helloworld!\n"
 "Name:\t\"DouglasAdams\"\nValue:\t42\n"
 
-"nikos
-
-
+"nikos  
 alex"

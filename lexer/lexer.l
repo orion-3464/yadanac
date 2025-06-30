@@ -1,8 +1,11 @@
 %top{
 #include <cstdio>
+#include <stack>
 }
 
 %{
+#define TAB_LEN 4
+
 #define T_eof   0
 
 #define T_and   1000
@@ -42,6 +45,10 @@
 #define T_char  1032
 
 #define T_auto_end 1033
+
+std::stack<int> indent_stack;
+int current_ident = 0;
+int blocks = 1;
 %}
 
 /* LEXER DEFINITIONS */
@@ -105,11 +112,37 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
 '({D}|{L}|{ESC}|{P}|" ")'   return T_char; 
 
+\"({L}|{D}|{ESC}|{S}|{P})*\"    return T_str;
+
+    /* OFFSIDE RULE */
+
+^{S}+                       {   char *input = yytext;
+                                int spaces = 0;
+                                
+                                for(int i = 0; i < yyleng; i++) 
+                                    spaces += (yytext[i] == '\t') ? TAB_LEN : 1;
+                                    
+                    
+                                current_ident = spaces;
+                                int current_level = (!indent_stack.empty()) ? indent_stack.top() : 0;
+                                
+                                if(current_ident > current_level) {
+                                    indent_stack.push(current_ident);
+                                }
+                                
+                                else if(current_ident < current_level) {
+                                    indent_stack.pop();
+                                    yyless(0);
+                                    //for(int i=0; i<spaces; ++i) unput(' ');
+                                    ++blocks;
+                                    return T_auto_end;
+                                }
+
+                                
+
+                            }
 
 {S}                         { /*nothing*/ }
-
-    /* STRING RULE */
-\"({L}|{D}|{ESC}|{S}|{P})*\"    return T_str;
 
     /* COMMENT RULES */
 
@@ -135,6 +168,9 @@ int main() {
     } while (token != T_eof);
 
     printf("\n Scanned text consists of %d lines\n", scanner->lineno());
+
+    printf("\n Scanned text consists of %d blocks\n", blocks);
+    
     delete scanner;
     return 0;
-}        
+}
