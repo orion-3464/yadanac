@@ -47,8 +47,9 @@
 #define T_auto_end 1033
 
 std::stack<int> indent_stack;
-int current_ident = 0;
+int current_indent = 0;
 int blocks = 1;
+int flag = 0;
 %}
 
 /* LEXER DEFINITIONS */
@@ -64,6 +65,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 /* LEXER STARTING STATES */
 
 %x COMMENT
+%x DRIVER
 
 /* LEXER OPTIONS */
 
@@ -73,7 +75,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
 %%
 
-\n
+\n          
     
 "and"       return T_and; 
 "as"        return T_as;
@@ -82,16 +84,16 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 "byte"      return T_byte; 
 "continue"  return T_cont; 
 "decl"      return T_decl; 
-"def"       return T_def; 
-"elif"      return T_elif; 
-"else"      return T_else; 
+"def"       { flag=1; return T_def; } 
+"elif"      { flag=1; return T_elif; } 
+"else"      { flag=1; return T_else; } 
 "end"       return T_end; 
 "exit"      return T_exit; 
 "false"     return T_false; 
-"if"        return T_if; 
+"if"        { flag=1; return T_if; } 
 "is"        return T_is; 
 "int"       return T_int; 
-"loop"      return T_loop;
+"loop"      { flag=1; return T_loop; }
 "not"       return T_not;
 "or"        return T_or;
 "ref"       return T_ref; 
@@ -116,31 +118,43 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
     /* OFFSIDE RULE */
 
-^{S}+                       {   char *input = yytext;
-                                int spaces = 0;
-                                
-                                for(int i = 0; i < yyleng; i++) 
-                                    spaces += (yytext[i] == '\t') ? TAB_LEN : 1;
-                                    
-                    
-                                current_ident = spaces;
-                                int current_level = (!indent_stack.empty()) ? indent_stack.top() : 0;
-                                
-                                if(current_ident > current_level) {
-                                    indent_stack.push(current_ident);
-                                }
-                                
-                                else if(current_ident < current_level) {
-                                    indent_stack.pop();
-                                    yyless(0);
-                                    //for(int i=0; i<spaces; ++i) unput(' ');
-                                    ++blocks;
-                                    return T_auto_end;
-                                }
-
-                                
-
+^{S}+               {   
+                        char *input = yytext;
+                        int spaces = 0;
+                        
+                        for(int i = 0; i < yyleng; i++) 
+                            spaces += (yytext[i] == '\t') ? TAB_LEN : 1;
+                            
+            
+                        current_indent = spaces;
+                        int current_level = (!indent_stack.empty()) ? indent_stack.top() : 0;
+                        
+                        if(current_indent > current_level) {
+                            indent_stack.push(current_indent);
+                            flag = 0;
+                        }
+                        
+                        else if(current_indent < current_level) {
+                            indent_stack.pop();
+                            int current = (!indent_stack.empty()) ? indent_stack.top() : 0;
+                            if(current>current_indent){
+                                yyless(0);
                             }
+                            //for(int i=0; i<spaces; ++i) unput(' ');
+                            ++blocks;
+                            //BEGIN(INITIAL);
+                            flag=0;
+                            return T_auto_end;
+                        }
+
+                        else {
+                            if(flag){
+                                ++blocks;
+                                flag=0;
+                                return T_auto_end;
+                            }
+                        }
+                    }
 
 {S}                         { /*nothing*/ }
 
