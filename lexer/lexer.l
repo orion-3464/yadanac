@@ -1,4 +1,11 @@
+%top{
+#include <cstdio>
+#include <stack>
+}
+
 %{
+#define TAB_LEN 4
+
 #define T_eof   0
 
 #define T_and   1000
@@ -36,72 +43,181 @@
 #define T_const 1030
 #define T_str   1031
 #define T_char  1032
+
+#define T_auto_end 1033
+
+std::stack<int> indent_stack;
+int current_indent = 0;
+int blocks = 0;
+int flag = 0;
+int at_no = 0;
+FlexLexer *scanner = new yyFlexLexer;
 %}
 
-L [A-Za-z]
-D [0-9]
-W [ \t\n\r]
-ESC_SIMPLE  \\[ntr0'"\\]
-ESC_HEX     \\x[0-9a-f]{2}
-ESC         ({ESC_SIMPLE}|{ESC_HEX})
-STRCHAR     [ -~]
+/* LEXER DEFINITIONS */
 
-%option noyywrap
+L [[:alpha:]]
+D [[:digit:]]
+S [[:blank:]]
+P [[:punct:]]{-}[\\\"\']
+ESC_SIMPLE  \\[ntr0\'\"\\]
+ESC_HEX     \\x[[:xdigit:]]{2}
+ESC         ({ESC_SIMPLE}|{ESC_HEX})
+
+/* LEXER STARTING STATES */
+
+%x COMMENT
+%x DRIVER
+
+/* LEXER OPTIONS */
+
+%option outfile="lexer.cpp"
+%option yylineno noyywrap
+%option c++ pointer 
 
 %%
-"and"       { return T_and; }
-"as"        { return T_as; }
-"begin"     { return T_begin; }
-"break"     { return T_break; }
-"byte"      { return T_byte; }
-"continue"  { return T_cont; }
-"decl"      { return T_decl; }
-"def"       { return T_def; }
-"elif"      { return T_elif; }
-"else"      { return T_else; }
-"end"       { return T_end; }
-"exit"      { return T_exit; }
-"false"     { return T_false; }
-"if"        { return T_if; }
-"is"        { return T_is; }
-"int"       { return T_int; }
-"loop"      { return T_loop; }
-"not"       { return T_not; }
-"or"        { return T_or; }
-"ref"       { return T_ref; }
-"return"    { return T_ret; }
-"skip"      { return T_skip; }
-"true"      { return T_true; }
-"var"       { return T_var; }
 
-":="        { return T_asgn; }
-":"         { return T_col; }
-"<="        { return T_leq; }
-">="        { return T_geq; }
-"<>"        { return T_neq; }
+\n          
+    
+"and"       return T_and; 
+"as"        return T_as;
+"begin"     return T_begin; 
+"break"     return T_break;
+"byte"      return T_byte; 
+"continue"  return T_cont; 
+"decl"      return T_decl; 
+"def"       { flag=1; ++blocks; return T_def; } 
+"elif"      { flag=1; ++blocks; return T_elif; } 
+"else"      { flag=1; ++blocks; return T_else; } 
+"end"       return T_end; 
+"exit"      return T_exit; 
+"false"     return T_false; 
+"if"        { flag=1; ++blocks; return T_if; } 
+"is"        return T_is; 
+"int"       return T_int; 
+"loop"      { flag=1; ++blocks; return T_loop; }
+"not"       return T_not;
+"or"        return T_or;
+"ref"       return T_ref; 
+"return"    return T_ret; 
+"skip"      return T_skip; 
+"true"      return T_true; 
+"var"       return T_var; 
+":="        return T_asgn; 
+":"         return T_col; 
+"<="        return T_leq; 
+">="        return T_geq; 
+"<>"        return T_neq; 
 
-[\+\-\*\/\%\!\&\|\=\<\>\(\)\[\]\,] { return yytext[0]; }
+[\+\-\*\/\%\!\&\|\=\<\>\(\)\[\]\,]  return yytext[0]; 
 
-{L}({L}|{D}|_)* { return T_id; }
-{D}+            { return T_const; }
+{L}({L}|{D}|_)*     return T_id; 
+{D}+                return T_const; 
 
-'({D}|{L}|{ESC})'   { return T_char; }
+'({D}|{L}|{ESC}|{P}|" ")'   return T_char; 
 
-\"({STRCHAR}*)\"    { return T_str; }
+\"({L}|{D}|{ESC}|{S}|{P})*\"    return T_str;
 
-{W}+                        { /*nothing*/ }
-\#.*\n                      { /*nothing*/ }
+    /* OFFSIDE RULE */
 
-"(*"(.|\n)*"*)"             {/*nothing*/}
+^{S}+               {   
+                        char *input = yytext;
+                        int spaces = 0;
+                        
+                        for(int i = 0; i < yyleng; i++) 
+                            spaces += (yytext[i] == '\t') ? TAB_LEN : 1;
+			char *yycopy = strdup (yytext);
+                            
+            
+                        current_indent = spaces;
+                        int current_level = (!indent_stack.empty()) ? indent_stack.top() : 0;
+                        
+                        if(current_indent > current_level) {
+			    if(flag){
+				indent_stack.push(current_indent);
+				flag=0;
+			    }
+			    else {
+				printf("\n Wrong identation on line %d \n", scanner->lineno());
+				yyterminate();
+			    }
+                        }
+                        
+                        else if(current_indent < current_level && !flag) {
+			    indent_stack.pop();
+                            int current = indent_stack.top();
+				
+	
+                            if(current>current_indent){
+                      		for(int i=0; i<yyleng; ++i) unput(yycopy[i]);
+				++at_no;
+				printf("\n Just put an auto-end on line %d \n", scanner->lineno());
+				printf("\n Current identation level is %d and used rule 1\n", current_indent);
+				return T_auto_end;
+                            }
+                            //for(int i=0; i<spaces; ++i) unput(' ');
+                            //BEGIN(INITIAL);
+			    else if(current==current_indent){
+			    	++at_no;
+			    	printf("\n Just put an auto-end on line %d \n", scanner->lineno());
+				printf("\n Current identation level is %d and used rule 2\n", current_indent);
+	                        return T_auto_end;
+			    }
+                            printf("\n Wrong identation on line %d \n", scanner->lineno());
+                            yyterminate();
+                        }
+
+                        else {
+				if(flag){	
+                                	if(current_indent<current_level)for(int i=0; i<yyleng; ++i) unput(yycopy[i]);
+                               		flag=0;
+					++at_no;
+					printf("\n Just put an auto-end on line %d \n", scanner->lineno());
+					printf("\n Current identation level is %d and used rule 3\n", current_indent);
+                                	return T_auto_end;
+                           	}
+                        }
+                    }
+
+"<<EOF>>" { 	if(indent_stack.empty())printf("\n all done \n");yyterminate();
+		indent_stack.pop();
+		if(!indent_stack.empty())yyless(0);
+		++at_no;
+		printf("\n Just put an auto-end on line %d \n", scanner->lineno());
+                printf("\n Current identation level is %d and used rule 4\n", current_indent);
+		return T_auto_end; 
+	  }
+
+{S}                         { /*nothing*/ }
+
+    /* COMMENT RULES */
+
+\#.*\n                      { /* ignore one-line comments */ }
+
+"(*"                        { BEGIN(COMMENT); }
+<COMMENT>[^*]*              { /*nothing*/ }
+<COMMENT>"*"+[^*)]*         { /*nothing*/ }
+<COMMENT>"*"+")"            { BEGIN(INITIAL); }
+
+    /* NOTHING MATCHED */
 
 .   { fprintf(stderr, "illegal token\n"); exit(1); }
 %%
 
 int main() {
-  int token;
-  do {
-    token = yylex();
-    printf("token = %d, lexeme = %s\n", token, yytext);
-  } while (token != T_eof);
-  return 0;
+    int token;
+
+    do {
+        token = scanner->yylex();
+        printf("token = %d, lexeme = %s\n", token, scanner->YYText());
+    } while (token != T_eof);
+
+    printf("\n Scanned text consists of %d lines\n", scanner->lineno());
+
+    printf("\n Scanned text consists of %d blocks\n", blocks);
+    
+    printf("\n Scanned text consists of %d auto-ends\n", at_no);
+   
+    delete scanner;
+    return 0;
 }
