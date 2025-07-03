@@ -108,7 +108,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 "<="        return T_leq; 
 ">="        return T_geq; 
 "<>"        return T_neq; 
-
+	
 [\+\-\*\/\%\!\&\|\=\<\>\(\)\[\]\,]  return yytext[0]; 
 
 {L}({L}|{D}|_)*     return T_id; 
@@ -125,9 +125,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                         int spaces = 0;
                         
                         for(int i = 0; i < yyleng; i++) 
-                            spaces += (yytext[i] == '\t') ? TAB_LEN : 1;
-			char *yycopy = strdup (yytext);
-                            
+                            spaces += (yytext[i] == '\t') ? TAB_LEN : 1;      
             
                         current_indent = spaces;
                         int current_level = (!indent_stack.empty()) ? indent_stack.top() : 0;
@@ -149,10 +147,12 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 				
 	
                             if(current>current_indent){
-                      		for(int i=0; i<yyleng; ++i) unput(yycopy[i]);
+                      		//for(int i=0; i<yyleng; ++i) unput(yycopy[i]);
+				yyless(0);
+				unput('\n');
 				++at_no;
 				printf("\n Just put an auto-end on line %d \n", scanner->lineno());
-				printf("\n Current identation level is %d and used rule 1\n", current_indent);
+				printf("\n Current identation level is %d and used case 1\n", current_indent);
 				return T_auto_end;
                             }
                             //for(int i=0; i<spaces; ++i) unput(' ');
@@ -160,7 +160,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 			    else if(current==current_indent){
 			    	++at_no;
 			    	printf("\n Just put an auto-end on line %d \n", scanner->lineno());
-				printf("\n Current identation level is %d and used rule 2\n", current_indent);
+				printf("\n Current identation level is %d and used case 2\n", current_indent);
 	                        return T_auto_end;
 			    }
                             printf("\n Wrong identation on line %d \n", scanner->lineno());
@@ -169,22 +169,35 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
                         else {
 				if(flag){	
-                                	if(current_indent<current_level)for(int i=0; i<yyleng; ++i) unput(yycopy[i]);
+                                	if(current_indent<current_level){
+						//for(int i=0; i<yyleng; ++i) unput(yycopy[i]);
+						yyless(0);
+						unput('\n');
+					}
                                		flag=0;
 					++at_no;
 					printf("\n Just put an auto-end on line %d \n", scanner->lineno());
-					printf("\n Current identation level is %d and used rule 3\n", current_indent);
+					printf("\n Current identation level is %d and used case 3\n", current_indent);
                                 	return T_auto_end;
                            	}
                         }
                     }
 
-"<<EOF>>" { 	if(indent_stack.empty())printf("\n all done \n");yyterminate();
+<<EOF>> { 	
+		if(indent_stack.empty()){
+			printf("\n all done \n");
+			return T_eof;
+		}
 		indent_stack.pop();
-		if(!indent_stack.empty())yyless(0);
+		
+		if(!indent_stack.empty()){
+			//for(int i=0; i<yyleng; ++i) unput(yycopy[i]);
+			yyless(0);
+		}
 		++at_no;
 		printf("\n Just put an auto-end on line %d \n", scanner->lineno());
-                printf("\n Current identation level is %d and used rule 4\n", current_indent);
+                printf("\n Current identation level is %d and used case 4\n", current_indent);
+		
 		return T_auto_end; 
 	  }
 
@@ -208,8 +221,9 @@ int main() {
     int token;
 
     do {
-        token = scanner->yylex();
-        printf("token = %d, lexeme = %s\n", token, scanner->YYText());
+	token = scanner->yylex();
+	const char* lexeme = (token == T_auto_end) ? "<auto-end>" : scanner->YYText(); //for cosmetic reasons
+        printf("token = %d, lexeme = %s\n", token, lexeme);
     } while (token != T_eof);
 
     printf("\n Scanned text consists of %d lines\n", scanner->lineno());
