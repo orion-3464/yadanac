@@ -66,7 +66,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 /* LEXER STARTING STATES */
 
 %x COMMENT
-%x DRIVER
+%s BEGIN_END
 
 /* LEXER OPTIONS */
 
@@ -81,7 +81,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
     
 "and"       return T_and; 
 "as"        return T_as;
-"begin"     return T_begin; 
+"begin"     { BEGIN(BEGIN_END); return T_begin; } 
 "break"     return T_break;
 "byte"      return T_byte; 
 "continue"  return T_cont; 
@@ -117,6 +117,8 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 '({D}|{L}|{ESC}|{P}|" ")'   return T_char; 
 
 \"({L}|{D}|{ESC}|{S}|{P})*\"    return T_str;
+
+<BEGIN_END>^{S}+        /* nothing */
 
     /* OFFSIDE RULE */
 
@@ -196,6 +198,8 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 			         
                         }
                     }
+
+<BEGIN_END><<EOF>> yyterminate();
 
 <<EOF>> { 	
 		if(indent_stack.empty()){
