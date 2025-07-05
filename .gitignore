@@ -2,13 +2,13 @@
 lexer/lexer
 lexer/lexer.cpp
 lexer/lexer.c
-
-*.o
-dc
-lexer.c 
 lexer/lexer.cpp
-parser.c 
-parser.h 
-parser.output
 
-*/parser.hpp
+parser/parser.hpp
+parser/*.o
+parser/dc
+parser/lexer.c 
+parser/parser.c 
+parser/parser.h 
+parser/parser.output
+
