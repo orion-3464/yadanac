@@ -136,14 +136,16 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 				flag=0;
 			    }
 			    else {
+				printf("\033[1;31m"); //Set the text to the color red 
 				printf("\n Wrong identation on line %d \n", scanner->lineno());
+				printf("\033[0m");
 				yyterminate();
 			    }
                         }
                         
                         else if(current_indent < current_level && !flag) {
 			    indent_stack.pop();
-                            int current = indent_stack.top();
+                            int current = (!indent_stack.empty()) ? indent_stack.top() : -1;
 				
 	
                             if(current>current_indent){
@@ -151,19 +153,25 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 				yyless(0);
 				unput('\n');
 				++at_no;
+				printf("\033[0;33m");
 				printf("\n Just put an auto-end on line %d \n", scanner->lineno());
 				printf("\n Current identation level is %d and used case 1\n", current_indent);
+				printf("\033[0m");
 				return T_auto_end;
                             }
                             //for(int i=0; i<spaces; ++i) unput(' ');
                             //BEGIN(INITIAL);
 			    else if(current==current_indent){
 			    	++at_no;
+				printf("\033[0;33m");
 			    	printf("\n Just put an auto-end on line %d \n", scanner->lineno());
 				printf("\n Current identation level is %d and used case 2\n", current_indent);
+				printf("\033[0m");
 	                        return T_auto_end;
 			    }
+                            printf("\033[1;31m"); //Set the text to the color red 
                             printf("\n Wrong identation on line %d \n", scanner->lineno());
+                            printf("\033[0m");
                             yyterminate();
                         }
 
@@ -176,16 +184,25 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 					}
                                		flag=0;
 					++at_no;
+				        printf("\033[0;33m");
 					printf("\n Just put an auto-end on line %d \n", scanner->lineno());
 					printf("\n Current identation level is %d and used case 3\n", current_indent);
+					printf("\033[0m");
                                 	return T_auto_end;
-                           	}
+                                }
+				
+			        else {
+				    /*nothing, because it means (current_indent==current_level && !flag), so we are inside a block with correct indetation*/ 
+				}
+			         
                         }
                     }
 
 <<EOF>> { 	
 		if(indent_stack.empty()){
+			printf("\033[1;32m");
 			printf("\n all done \n");
+			printf("\033[0m");
 			return T_eof;
 		}
 		indent_stack.pop();
@@ -195,8 +212,10 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 			yyless(0);
 		}
 		++at_no;
+		printf("\033[0;33m");
 		printf("\n Just put an auto-end on line %d \n", scanner->lineno());
                 printf("\n Current identation level is %d and used case 4\n", current_indent);
+		printf("\033[0m");
 		
 		return T_auto_end; 
 	  }
@@ -214,7 +233,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
     /* NOTHING MATCHED */
 
-.   { fprintf(stderr, "illegal token\n"); exit(1); }
+.   { printf("\033[1;31m"); fprintf(stderr, "illegal token\n"); printf("\033[0m"); exit(1); }
 %%
 
 int main() {
