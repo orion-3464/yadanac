@@ -1,5 +1,7 @@
 .vscode
 lexer/lexer
+lexer/lexer.cpp
+lexer/lexer.c
 
 *.o
 dc

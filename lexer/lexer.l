@@ -48,8 +48,9 @@
 
 std::stack<int> indent_stack;
 int current_indent = 0;
-int blocks = 1;
+int blocks = 0;
 int flag = 0;
+int at_no = 0;
 %}
 
 /* LEXER DEFINITIONS */
@@ -71,7 +72,8 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
 %option outfile="lexer.cpp"
 %option yylineno noyywrap
-%option c++ pointer 
+%option pointer 
+	// %option bison-bridge
 
 %%
 
@@ -84,16 +86,16 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 "byte"      return T_byte; 
 "continue"  return T_cont; 
 "decl"      return T_decl; 
-"def"       { flag=1; return T_def; } 
-"elif"      { flag=1; return T_elif; } 
-"else"      { flag=1; return T_else; } 
+"def"       { flag=1; ++blocks; return T_def; } 
+"elif"      { flag=1; ++blocks; return T_elif; } 
+"else"      { flag=1; ++blocks; return T_else; } 
 "end"       return T_end; 
 "exit"      return T_exit; 
 "false"     return T_false; 
-"if"        { flag=1; return T_if; } 
+"if"        { flag=1; ++blocks; return T_if; } 
 "is"        return T_is; 
 "int"       return T_int; 
-"loop"      { flag=1; return T_loop; }
+"loop"      { flag=1; ++blocks; return T_loop; }
 "not"       return T_not;
 "or"        return T_or;
 "ref"       return T_ref; 
@@ -106,7 +108,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 "<="        return T_leq; 
 ">="        return T_geq; 
 "<>"        return T_neq; 
-
+	
 [\+\-\*\/\%\!\&\|\=\<\>\(\)\[\]\,]  return yytext[0]; 
 
 {L}({L}|{D}|_)*     return T_id; 
@@ -123,38 +125,98 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                         int spaces = 0;
                         
                         for(int i = 0; i < yyleng; i++) 
-                            spaces += (yytext[i] == '\t') ? TAB_LEN : 1;
-                            
+                            spaces += (yytext[i] == '\t') ? TAB_LEN : 1;      
             
                         current_indent = spaces;
                         int current_level = (!indent_stack.empty()) ? indent_stack.top() : 0;
                         
                         if(current_indent > current_level) {
-                            indent_stack.push(current_indent);
-                            flag = 0;
+			    if(flag){
+				indent_stack.push(current_indent);
+				flag=0;
+			    }
+			    else if(current_level==0) {
+				/*nothing, because this is the case where def main has indetation!=0*/
+			    }
+			    else {
+				printf("\033[1;31m");  
+				printf("\n Wrong identation on line %d \n", yylineno);
+				printf("\033[0m");
+				yyterminate();
+			    }
                         }
                         
-                        else if(current_indent < current_level) {
-                            indent_stack.pop();
+                        else if(current_indent < current_level && !flag) {
+			    indent_stack.pop();
                             int current = (!indent_stack.empty()) ? indent_stack.top() : 0;
+				
+	
                             if(current>current_indent){
-                                yyless(0);
+				yyless(0);
+				unput('\n');
+				++at_no;
+				printf("\033[0;33m");
+				printf("\n Just put an auto-end on line %d \n", yylineno);
+				printf("\n Current identation level is %d and used case 1\n", current_indent);
+				printf("\033[0m");
+				return T_auto_end;
                             }
-                            //for(int i=0; i<spaces; ++i) unput(' ');
-                            ++blocks;
-                            //BEGIN(INITIAL);
-                            flag=0;
-                            return T_auto_end;
+			    else if(current==current_indent){
+			    	++at_no;
+				printf("\033[0;33m");
+			    	printf("\n Just put an auto-end on line %d \n", yylineno);
+				printf("\n Current identation level is %d and used case 2\n", current_indent);
+				printf("\033[0m");
+	                        return T_auto_end;
+			    }
+                            printf("\033[1;31m"); 
+                            printf("\n Wrong identation on line %d \n", yylineno);
+                            printf("\033[0m");
+                            yyterminate();
                         }
 
                         else {
-                            if(flag){
-                                ++blocks;
-                                flag=0;
-                                return T_auto_end;
-                            }
+				if(flag){	
+                                	if(current_indent<current_level){
+						yyless(0);
+						unput('\n');
+					}
+                               		flag=0;
+					++at_no;
+				        printf("\033[0;33m");
+					printf("\n Just put an auto-end on line %d \n", yylineno);
+					printf("\n Current identation level is %d and used case 3\n", current_indent);
+					printf("\033[0m");
+                                	return T_auto_end;
+                                }
+				
+			        else {
+				    /*nothing, because it means (current_indent==current_level && !flag), so we are inside a block with correct indetation*/ 
+				}
+			         
                         }
                     }
+
+<<EOF>> { 	
+		if(indent_stack.empty()){
+			printf("\033[1;32m");
+			printf("\n all done \n");
+			printf("\033[0m");
+			return T_eof;
+		}
+		indent_stack.pop();
+		
+		if(!indent_stack.empty()){
+			yyless(0);
+		}
+		++at_no;
+		printf("\033[0;33m");
+		printf("\n Just put an auto-end on line %d \n", yylineno);
+                printf("\n Current identation level is %d and used case 4\n", current_indent);
+		printf("\033[0m");
+		
+		return T_auto_end; 
+	  }
 
 {S}                         { /*nothing*/ }
 
@@ -169,22 +231,23 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
     /* NOTHING MATCHED */
 
-.   { fprintf(stderr, "illegal token\n"); exit(1); }
+.   { printf("\033[1;31m"); fprintf(stderr, "illegal token\n"); printf("\033[0m"); exit(1); }
 %%
 
 int main() {
-    FlexLexer *scanner = new yyFlexLexer;
     int token;
 
     do {
-        token = scanner->yylex();
-        printf("token = %d, lexeme = %s\n", token, scanner->YYText());
+	token = yylex();
+	const char* lexeme = (token == T_auto_end) ? "<auto-end>" : yytext; /*for cosmetic reasons for the output*/
+        printf("token = %d, lexeme = %s\n", token, lexeme);
     } while (token != T_eof);
 
-    printf("\n Scanned text consists of %d lines\n", scanner->lineno());
+    printf("\n Scanned text consists of %d lines\n", yylineno);
 
     printf("\n Scanned text consists of %d blocks\n", blocks);
     
-    delete scanner;
+    printf("\n Scanned text consists of %d auto-ends\n", at_no);
+   
     return 0;
 }
