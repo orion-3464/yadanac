@@ -135,8 +135,11 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 				indent_stack.push(current_indent);
 				flag=0;
 			    }
+			    else if(current_level==0) {
+				/*nothing, because this is the case where def main has indetation!=0*/
+			    }
 			    else {
-				printf("\033[1;31m"); //Set the text to the color red 
+				printf("\033[1;31m");  
 				printf("\n Wrong identation on line %d \n", scanner->lineno());
 				printf("\033[0m");
 				yyterminate();
@@ -145,11 +148,10 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                         
                         else if(current_indent < current_level && !flag) {
 			    indent_stack.pop();
-                            int current = (!indent_stack.empty()) ? indent_stack.top() : -1;
+                            int current = (!indent_stack.empty()) ? indent_stack.top() : 0;
 				
 	
                             if(current>current_indent){
-                      		//for(int i=0; i<yyleng; ++i) unput(yycopy[i]);
 				yyless(0);
 				unput('\n');
 				++at_no;
@@ -159,8 +161,6 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 				printf("\033[0m");
 				return T_auto_end;
                             }
-                            //for(int i=0; i<spaces; ++i) unput(' ');
-                            //BEGIN(INITIAL);
 			    else if(current==current_indent){
 			    	++at_no;
 				printf("\033[0;33m");
@@ -169,7 +169,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 				printf("\033[0m");
 	                        return T_auto_end;
 			    }
-                            printf("\033[1;31m"); //Set the text to the color red 
+                            printf("\033[1;31m"); 
                             printf("\n Wrong identation on line %d \n", scanner->lineno());
                             printf("\033[0m");
                             yyterminate();
@@ -178,7 +178,6 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                         else {
 				if(flag){	
                                 	if(current_indent<current_level){
-						//for(int i=0; i<yyleng; ++i) unput(yycopy[i]);
 						yyless(0);
 						unput('\n');
 					}
@@ -208,7 +207,6 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 		indent_stack.pop();
 		
 		if(!indent_stack.empty()){
-			//for(int i=0; i<yyleng; ++i) unput(yycopy[i]);
 			yyless(0);
 		}
 		++at_no;
@@ -241,7 +239,7 @@ int main() {
 
     do {
 	token = scanner->yylex();
-	const char* lexeme = (token == T_auto_end) ? "<auto-end>" : scanner->YYText(); //for cosmetic reasons
+	const char* lexeme = (token == T_auto_end) ? "<auto-end>" : scanner->YYText(); /*for cosmetic reasons for the output*/
         printf("token = %d, lexeme = %s\n", token, lexeme);
     } while (token != T_eof);
 
