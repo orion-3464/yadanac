@@ -4,11 +4,14 @@ lexer/lexer.cpp
 lexer/lexer.c
 lexer/lexer.cpp
 
-parser/parser.hpp
+parser/parser.h
 parser/*.o
 parser/dc
 parser/lexer.c 
+parser/lexer.cpp 
 parser/parser.c 
+parser/parser.cpp 
 parser/parser.h 
+parser/parser.hpp
 parser/parser.output
 
