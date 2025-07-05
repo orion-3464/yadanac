@@ -51,7 +51,6 @@ int current_indent = 0;
 int blocks = 0;
 int flag = 0;
 int at_no = 0;
-FlexLexer *scanner = new yyFlexLexer;
 %}
 
 /* LEXER DEFINITIONS */
@@ -73,7 +72,8 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
 %option outfile="lexer.cpp"
 %option yylineno noyywrap
-%option c++ pointer 
+%option pointer 
+	// %option bison-bridge
 
 %%
 
@@ -140,7 +140,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 			    }
 			    else {
 				printf("\033[1;31m");  
-				printf("\n Wrong identation on line %d \n", scanner->lineno());
+				printf("\n Wrong identation on line %d \n", yylineno);
 				printf("\033[0m");
 				yyterminate();
 			    }
@@ -156,7 +156,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 				unput('\n');
 				++at_no;
 				printf("\033[0;33m");
-				printf("\n Just put an auto-end on line %d \n", scanner->lineno());
+				printf("\n Just put an auto-end on line %d \n", yylineno);
 				printf("\n Current identation level is %d and used case 1\n", current_indent);
 				printf("\033[0m");
 				return T_auto_end;
@@ -164,13 +164,13 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 			    else if(current==current_indent){
 			    	++at_no;
 				printf("\033[0;33m");
-			    	printf("\n Just put an auto-end on line %d \n", scanner->lineno());
+			    	printf("\n Just put an auto-end on line %d \n", yylineno);
 				printf("\n Current identation level is %d and used case 2\n", current_indent);
 				printf("\033[0m");
 	                        return T_auto_end;
 			    }
                             printf("\033[1;31m"); 
-                            printf("\n Wrong identation on line %d \n", scanner->lineno());
+                            printf("\n Wrong identation on line %d \n", yylineno);
                             printf("\033[0m");
                             yyterminate();
                         }
@@ -184,7 +184,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                                		flag=0;
 					++at_no;
 				        printf("\033[0;33m");
-					printf("\n Just put an auto-end on line %d \n", scanner->lineno());
+					printf("\n Just put an auto-end on line %d \n", yylineno);
 					printf("\n Current identation level is %d and used case 3\n", current_indent);
 					printf("\033[0m");
                                 	return T_auto_end;
@@ -211,7 +211,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 		}
 		++at_no;
 		printf("\033[0;33m");
-		printf("\n Just put an auto-end on line %d \n", scanner->lineno());
+		printf("\n Just put an auto-end on line %d \n", yylineno);
                 printf("\n Current identation level is %d and used case 4\n", current_indent);
 		printf("\033[0m");
 		
@@ -238,17 +238,16 @@ int main() {
     int token;
 
     do {
-	token = scanner->yylex();
-	const char* lexeme = (token == T_auto_end) ? "<auto-end>" : scanner->YYText(); /*for cosmetic reasons for the output*/
+	token = yylex();
+	const char* lexeme = (token == T_auto_end) ? "<auto-end>" : yytext; /*for cosmetic reasons for the output*/
         printf("token = %d, lexeme = %s\n", token, lexeme);
     } while (token != T_eof);
 
-    printf("\n Scanned text consists of %d lines\n", scanner->lineno());
+    printf("\n Scanned text consists of %d lines\n", yylineno);
 
     printf("\n Scanned text consists of %d blocks\n", blocks);
     
     printf("\n Scanned text consists of %d auto-ends\n", at_no);
    
-    delete scanner;
     return 0;
 }
