@@ -1,7 +1,7 @@
 %{ 
 #include <stdio.h>
 #include <stdlib.h>
-#include "lexer.h"
+#include "lexer.hpp"
 %}
 
 %token T_and   "and"
@@ -39,6 +39,7 @@
 %token T_const 
 %token T_str   
 %token T_char  
+%token T_auto_end 
 
 %left "or"
 %left "and"
@@ -112,7 +113,7 @@ var_def : "var" T_id id_list "is" type
         ;
 
 block   : "begin" stmt stmt_list "end"
-        /*| stmt stmt_list T_auto_end */
+        | stmt stmt_list T_auto_end 
         ;
 
 stmt_list   : %empty
