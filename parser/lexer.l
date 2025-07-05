@@ -163,7 +163,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                         }
                     }
 
-<BEGIN_END><<EOF>>      /* nothing */
+<BEGIN_END><<EOF>>      yyterminate();
 
 <<EOF>> { 	
 		if(indent_stack.empty()){

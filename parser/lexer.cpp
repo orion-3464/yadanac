@@ -1151,7 +1151,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case YY_STATE_EOF(BEGIN_END):
 #line 167 "lexer.l"
-/* nothing */
+yyterminate();
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(COMMENT):

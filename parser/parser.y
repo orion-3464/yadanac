@@ -113,7 +113,7 @@ var_def : "var" T_id id_list "is" type
         ;
 
 block   : "begin" stmt stmt_list "end"
-        | stmt stmt_list T_auto_end 
+        | stmt stmt_list T_auto_end  
         ;
 
 stmt_list   : %empty
