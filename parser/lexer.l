@@ -14,6 +14,7 @@ int current_indent = 0;
 int blocks = 0;
 int flag = 0;
 int at_no = 0;
+int found_begin = 0;
 %}
 
 /* LEXER DEFINITIONS */
