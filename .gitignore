@@ -1,12 +1,11 @@
-# Build artifacts
 *.o
 *.output
 dc
 
-# Parser specific
+lexer/lexer.cpp
+
 parser/lexer.cpp
 parser/parser.cpp
 parser/parser.hpp
 
-# IDE
 .vscode/
