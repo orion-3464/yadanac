@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "lexer.hpp"
+
+#define RESET   "\033[0m"       /* Reset */
+#define RED     "\033[31m"      /* Red */
+#define GREEN   "\033[32m"      /* Green */
 %}
 
 %token T_and   "and"
@@ -205,12 +209,12 @@ cond    : expr
 %%
 
 void yyerror(const char *msg) {
-	printf("Syntax error: %s\n", msg);
+	printf(RED "Syntax error: %s\n" RESET, msg);
 	exit(42);
 }
 
 int main() {
 	int res = yyparse();
-	(res == 0) ? printf("Successful parsing\n") : printf("Error in parsing\n");
+	(res == 0) ? printf(GREEN "Successful parsing\n" RESET) : printf("Error in parsing\n");
 	return res;
 }
