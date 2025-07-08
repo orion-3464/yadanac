@@ -3,9 +3,11 @@
 dc
 
 lexer/lexer.cpp
+lexer/lexer
 
 parser/lexer.cpp
 parser/parser.cpp
 parser/parser.hpp
+parser/dc
 
 .vscode/
