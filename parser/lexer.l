@@ -3,6 +3,12 @@
 #include <stack>
 #include <cstring>
 #include "parser.hpp"
+}
+
+%{
+#define TAB_LEN 4
+
+#define T_eof   0
 
 /*helper function for block-style detection*/
 int block_style = 0; 
@@ -16,15 +22,8 @@ void detect_block_style(FILE *f) {
             return;
         }
     }
-
     rewind(f);
 }
-}
-
-%{
-#define TAB_LEN 4
-
-#define T_eof   0
 
 std::stack<int> indent_stack;
 int current_indent = 0;
@@ -106,20 +105,23 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
     /* OFFSIDE RULE */
 ^{S}+(\n|\#|"(*") {
-    		     char *input = yytext;
+                        char *input = yytext;
 
-		     for(int i=0; i < yyleng; ++i){
-			if(yytext[i]=='('){
-			    unput('*');
-			    unput('(');
-			    break;
+                        for(int i=0; i < yyleng; ++i) {
+                            if(yytext[i]=='(') {
+                                unput('*');
+                                unput('(');
+                                break;
+                            }
+                            else if(yytext[i]=='#'){
+                                unput('#');
+                                break;
+                            }
+                            else if(yytext[i]=='\n') {
+                                unput('\n'); 
+                                break;
+                            }
                         }
-			else if(yytext[i]=='#'){
-			    unput('#');
-			    break;
-			}
-			else if(yytext[i]=='\n'){unput('\n'); break;}
-		     }
                    }
 
 ^{S}+               {   
@@ -133,45 +135,46 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                         int current_level = (!indent_stack.empty()) ? indent_stack.top() : 0;
                         
                         if(current_indent > current_level) {
-			   if(YY_START == DRIVER){
-				indent_stack.push(current_indent);
-				BEGIN(INITIAL);
-			   }
-			   else if(current_level==0) {
-				/*nothing, because this is the case where def main has indetation!=0*/
-			   }
-			   else {
-				printf("\033[1;31m");  
-				printf("\n Wrong identation on line %d \n", yylineno);
-				printf("\033[0m");
-				yyterminate();
-			   }
-                        }
-                        
-                        else if(current_indent < current_level && YY_START == INITIAL) {
-			   indent_stack.pop();
-                            int current = (!indent_stack.empty()) ? indent_stack.top() : 0;
-				
-	
-                            if(current>current_indent){
-				yyless(0);
-				unput('\n');
-				count=1;
-				++at_no;
-				printf("\033[0;33m");
-				printf("\n Just put an auto-end on line %d or line %d \n", yylineno, num_lines);
-				printf("\n Current identation level is %d and used case 1\n", current_indent);
-				printf("\033[0m");
-				return T_auto_end;
+                            if(YY_START == DRIVER) {
+                                indent_stack.push(current_indent);
+                                BEGIN(INITIAL);
                             }
-			   else if(current==current_indent){
-			   	++at_no;
-				printf("\033[0;33m");
-			   	printf("\n Just put an auto-end on line %d or line %d\n", yylineno, num_lines);
-				printf("\n Current identation level is %d and used case 2\n", current_indent);
-				printf("\033[0m");
-	                       return T_auto_end;
-			   }
+                            else if(current_level==0) {
+                                /*nothing, because this is the case where def main has indetation!=0*/
+                            }
+                            else {
+                                printf("\033[1;31m");  
+                                printf("\n Wrong identation on line %d \n", yylineno);
+                                printf("\033[0m");
+                                yyterminate();
+                            }
+                        }
+                                    
+                        else if(current_indent < current_level && YY_START == INITIAL) {
+                            indent_stack.pop();
+                            int current = (!indent_stack.empty()) ? indent_stack.top() : 0;
+                            
+                
+                            if(current>current_indent) {
+                                yyless(0);
+                                unput('\n');
+                                count=1;
+                                ++at_no;
+                                printf("\033[0;33m");
+                                printf("\n Just put an auto-end on line %d or line %d \n", yylineno, num_lines);
+                                printf("\n Current identation level is %d and used case 1\n", current_indent);
+                                printf("\033[0m");
+                                return T_auto_end;
+                            }
+                            else if(current==current_indent){
+                                ++at_no;
+                                printf("\033[0;33m");
+                                printf("\n Just put an auto-end on line %d or line %d\n", yylineno, num_lines);
+                                printf("\n Current identation level is %d and used case 2\n", current_indent);
+                                printf("\033[0m");
+                                return T_auto_end;
+                            }
+
                             printf("\033[1;31m"); 
                             printf("\n Wrong identation on line %d \n", yylineno);
                             printf("\033[0m");
@@ -179,49 +182,48 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                         }
 
                         else {
-				if(YY_START == DRIVER){	
-                                	if(current_indent<current_level){
-						yyless(0);
-						unput('\n');
-  						count=1;
-					}
-                               		BEGIN(INITIAL);
-					++at_no;
-				        printf("\033[0;33m");
-					printf("\n Just put an auto-end on line %d or line %d\n", yylineno, num_lines);
-					printf("\n Current identation level is %d and used case 3\n", current_indent);
-					printf("\033[0m");
-                                	return T_auto_end;
+                            if(YY_START == DRIVER) {	
+                                if(current_indent<current_level) {
+                                    yyless(0);
+                                    unput('\n');
+                                    count=1;
                                 }
-				
-			       else {
-				   /*nothing, because it means (current_indent==current_level && !flag), so we are inside a block with correct indetation*/ 
-				}
-			        
+                                BEGIN(INITIAL);
+                                ++at_no;
+                                printf("\033[0;33m");
+                                printf("\n Just put an auto-end on line %d or line %d\n", yylineno, num_lines);
+                                printf("\n Current identation level is %d and used case 3\n", current_indent);
+                                printf("\033[0m");
+                                return T_auto_end;
+                            }
+                            
+                            else {
+                            /*nothing, because it means (current_indent==current_level && !flag), so we are inside a block with correct indetation*/ 
+                            }
                         }
                     }
 
 <BEGIN_END><<EOF>>      yyterminate();
 
 <<EOF>> { 	
-		if(indent_stack.empty()){
-			printf("\033[1;32m");
-			printf("\n all done \n");
-			printf("\033[0m");
-			return T_eof;
-		}
-		indent_stack.pop();
-		
-		if(!indent_stack.empty()){
-			yyless(0);
-		}
-		++at_no;
-		printf("\033[0;33m");
-		printf("\n Just put an auto-end on line %d or line %d \n", yylineno, num_lines);
-                printf("\n Current identation level is %d and used case 4\n", current_indent);
-		printf("\033[0m");
-		
-		return T_auto_end; 
+            if(indent_stack.empty()){
+                printf("\033[1;32m");
+                printf("\n all done \n");
+                printf("\033[0m");
+                return T_eof;
+            }
+            indent_stack.pop();
+            
+            if(!indent_stack.empty()){
+                yyless(0);
+            }
+            ++at_no;
+            printf("\033[0;33m");
+            printf("\n Just put an auto-end on line %d or line %d \n", yylineno, num_lines);
+                    printf("\n Current identation level is %d and used case 4\n", current_indent);
+            printf("\033[0m");
+            
+            return T_auto_end; 
 	 }
 
 {S}                         { /*nothing*/ }

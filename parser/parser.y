@@ -218,7 +218,7 @@ int main(int argc, char* argv[]) {
     if (!f) {
         perror("fopen");
         exit(1);
-    }
+    }   
 
     yyin = f;
 
