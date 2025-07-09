@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "lexer.hpp"
+#include "ast.hpp"
 %}
 
 %token T_and   "and"
@@ -36,9 +37,9 @@
 %token T_neq    "<>"
 
 %token T_id 
-%token T_const 
-%token T_str   
-%token T_char  
+%token<num> T_const 
+%token<str> T_str   
+%token<ch_cnst> T_char  
 %token T_auto_end 
 
 %left "or"
@@ -50,6 +51,13 @@
 %precedence UPLUS UMINUS UNOT
 
 %expect 2
+
+%union {
+    int num;
+    const char* str;
+    char ch_cnst;
+}
+
 
 %%
 
