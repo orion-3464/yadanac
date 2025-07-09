@@ -12,4 +12,11 @@ parser/dc
 parser/*.o
 parser/parser.output
 
+parser-ast/lexer.cpp
+parser-ast/parser.cpp
+parser-ast/parser.hpp
+parser-ast/dc
+parser-ast/*.o
+parser-ast/parser.output
+
 .vscode/
