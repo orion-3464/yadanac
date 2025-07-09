@@ -1,27 +1,25 @@
 def main
-begin
     def fib: n as int, result as ref int
+var a is int var b is int
     begin
         if n <= 0:
         begin
             result := 0
         end
-        elif n = 1:
+        elif  n = 1:
         begin
             result := 1
         end
         else:
-        begin
-            var a is int
-            var b is int
-            fib: n-1, a
+            begin 
+            ifib: n-1, a
             fib: n-2, b
             result := a + b
-        end
+        end end
         
-        var n is int
-        var res is int
-
+     var n is int
+     var res is int
+    begin
         n := readInteger()
 
         fib: n, res
@@ -32,4 +30,4 @@ begin
         writeInteger: res
         writeString: "\n"
     end
-end
+

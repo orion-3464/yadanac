@@ -2,10 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "lexer.hpp"
-
-#define RESET   "\033[0m"       /* Reset */
-#define RED     "\033[31m"      /* Red */
-#define GREEN   "\033[32m"      /* Green */
 %}
 
 %token T_and   "and"
@@ -209,12 +205,31 @@ cond    : expr
 %%
 
 void yyerror(const char *msg) {
-	printf(RED "Syntax error: %s\n" RESET, msg);
+	printf("Syntax error: %s\n", msg);
 	exit(42);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    extern FILE *yyin;
+    extern int block_style;
+    void detect_block_style(FILE *);
+     
+    FILE* f = fopen(argv[1], "r");
+    if (!f) {
+        perror("fopen");
+        exit(1);
+    }   
+
+    yyin = f;
+
+    detect_block_style(yyin);
+
+    printf("Using %s%s%s syntax.\n",
+       block_style == 1 ? "\033[0;33m" : "\033[0;34m",
+       block_style == 1 ? "block-delimiter" : "indentation",
+       "\033[0m");
+
 	int res = yyparse();
-	(res == 0) ? printf(GREEN "Successful parsing\n" RESET) : printf("Error in parsing\n");
+	(res == 0) ? printf("\033[1;32m Successful parsing\n \033[0m") : printf("\033[1;31m Error in parsing\n \033[0m");
 	return res;
 }
