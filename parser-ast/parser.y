@@ -46,7 +46,7 @@
 %token T_leq    "<="
 %token T_neq    "<>"
 
-%token T_id 
+%token<str> T_id 
 %token<num> T_const 
 %token<str> T_str   
 %token<ch_cnst> T_char  
@@ -127,7 +127,7 @@ local_def   : func_def
 type    : data_type bracket_int_const_list
         ;
 
-func_decl   : "decl" header
+func_decl   : "decl" header                         { $$ = new Decl($2); }
             ;
 
 var_def : "var" T_id id_list "is" type
@@ -145,7 +145,7 @@ stmt    : "skip"
         | l_value ":=" expr
         | proc_call
         | "exit"
-        | "return" ":" expr
+        | "return" ":" expr                                             { $$ = new Return($3); }
         | "if" cond ":" block elif_cond_block_list else_col_block
         | "loop" one_id ":" block 
         | "break" col_id
@@ -161,20 +161,20 @@ else_col_block  : %empty
                 ;
 
 one_id  : %empty
-        | T_id
+        | T_id      { $$ = $1; }
         ;
 
 col_id  : %empty
         | ":" T_id
         ;
 
-l_value : T_id
-        | T_str
+l_value : T_id                  { $$ = $1; }
+        | T_str                 { $$ = $1; }
         | l_value '[' expr ']'
         ;
 
-expr    : T_const
-        | T_char
+expr    : T_const   { $$ = new Const($1); }
+        | T_char    { $$ = new Char($1); }
         | l_value
         | '(' expr ')' 
         | func_call
