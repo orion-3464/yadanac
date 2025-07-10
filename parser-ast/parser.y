@@ -1,6 +1,4 @@
 %code top {
-    #define YYPARSE_PARAM scanner
-    #define YYLEX_PARAM scanner
     #include <stdio.h>
     #include <stdlib.h>
 }
@@ -64,13 +62,11 @@
 
 %expect 2
 
-
 %union {
     int num;
     std::string* str;
     char ch_cnst;
 }
-
 
 %%
 
@@ -226,7 +222,7 @@ cond    : expr
 %%
 
 void yyerror(YYLTYPE *locp, const char *msg) {
-	printf("Syntax error: %s\n", msg);
+	printf("Syntax error: %s\n at line %d\n", msg, locp->last_line);
 	exit(42);
 }
 

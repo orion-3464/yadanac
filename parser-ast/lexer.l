@@ -1,4 +1,5 @@
 %top{
+
 #include <cstdio>
 #include <stack>
 #include <cstring>
@@ -55,8 +56,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 %option outfile="lexer.cpp"
 %option yylineno noyywrap nodefault
 %option pointer 
-%option bison-bridge
-%option bison-locations
+%option bison-bridge bison-locations
 
 %%
 	if(block_style==1)BEGIN(BEGIN_END);
