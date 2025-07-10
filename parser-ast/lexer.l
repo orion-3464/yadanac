@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <stack>
 #include <cstring>
+#include <string>
 #include "parser.hpp"
 }
 
@@ -95,12 +96,12 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 	
 [\+\-\*\/\%\!\&\|\=\<\>\(\)\[\]\,]  return yytext[0]; 
 
-{L}({L}|{D}|_)*     return T_id; 
-{D}+                return T_const; 
+{L}({L}|{D}|_)*     { yylval->str = new std::string(yytext); return T_id; }
+{D}+                { yylval->num = atoi(yytext); return T_const; } 
 
-'({D}|{L}|{ESC}|{P}|" ")'   return T_char; 
+'({D}|{L}|{ESC}|{P}|" ")'   { yylval->ch_cnst = yytext[0]; return T_char;}
 
-\"({L}|{D}|{ESC}|{S}|{P})*\"    return T_str;
+\"({L}|{D}|{ESC}|{S}|{P})*\"    { yylval->str = new std::string(yytext); return T_str; }
 
 <BEGIN_END>^{S}+    /* nothing */
 
