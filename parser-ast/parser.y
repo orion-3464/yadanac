@@ -68,6 +68,10 @@
     char ch_cnst;
 }
 
+%type<ast> cond one_expr func_call expr_list one_col_expr proc_call expr l_value col_id one_id else_col_block elif_cond_block_list 
+%type<ast> stmt stmt_list block var_def func_decl type local_def bracket_int_const_list fpar_type data_type id_list fpar_def 
+%type<ast> fpar_def_list col_fpar_def is_data_type header local_def_list func_def program
+
 %%
 
 program : func_def
