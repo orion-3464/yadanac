@@ -251,6 +251,19 @@ int main(int argc, char* argv[]) {
        "\033[0m");
 
 	int res = yyparse();
-	(res == 0) ? printf("\033[1;32m Successful parsing\n \033[0m") : printf("\033[1;31m Error in parsing\n \033[0m");
+    switch(res) {
+        case 0:
+            printf("\033[1;32m Successful parsing\n \033[0m");
+            break;
+
+        case 1:
+            printf("\033[1;31m Syntaxt error in parsing\n \033[0m");
+            break;
+        
+        case 2:
+            printf("\033[1;31m Parsing failed due to memory exhaustion\n \033[0m");
+            break;
+    }
+
 	return res;
 }
