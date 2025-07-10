@@ -1,9 +1,21 @@
-%{ 
-#include <stdio.h>
-#include <stdlib.h>
-#include "lexer.hpp"
-#include "ast.hpp"
-%}
+%code top {
+    #define YYPARSE_PARAM scanner
+    #define YYLEX_PARAM scanner
+    #include <stdio.h>
+    #include <stdlib.h>
+}
+
+%code requires {
+    #include <string>
+    #include "ast.hpp"
+}
+
+%code {
+    #include "lexer.hpp"
+}
+
+%locations
+%define api.pure full
 
 %token T_and   "and"
 %token T_as    "as"
@@ -52,9 +64,10 @@
 
 %expect 2
 
+
 %union {
     int num;
-    const char* str;
+    std::string* str;
     char ch_cnst;
 }
 
@@ -212,7 +225,7 @@ cond    : expr
 
 %%
 
-void yyerror(const char *msg) {
+void yyerror(YYLTYPE *locp, const char *msg) {
 	printf("Syntax error: %s\n", msg);
 	exit(42);
 }
