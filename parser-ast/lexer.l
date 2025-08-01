@@ -64,11 +64,11 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
 \n          { if(!count)++num_lines; count=0; }
     
-"and"       return T_and; 
+"and"       { yylval->op = new std::string(yytext); return T_and; } 
 "as"        return T_as;
 "begin"     return T_begin;  
 "break"     return T_break;
-"byte"      return T_byte; 
+"byte"      { yylval->dtype = new std::string(yytext); return T_byte; } 
 "continue"  return T_cont; 
 "decl"      return T_decl; 
 "def"       { BEGIN(DRIVER); ++blocks; return T_def; } 
@@ -76,27 +76,27 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 "else"      { BEGIN(DRIVER); ++blocks; return T_else; } 
 "end"       return T_end; 
 "exit"      return T_exit; 
-"false"     return T_false; 
+"false"     { yylval->btype = new std::string(yytext); return T_false; } 
 "if"        { BEGIN(DRIVER); ++blocks; return T_if; } 
 "is"        return T_is; 
-"int"       return T_int; 
+"int"       { yylval->dtype = new std::string(yytext); return T_int; } 
 "loop"      { BEGIN(DRIVER); ++blocks; return T_loop; }
 "not"       return T_not;
-"or"        return T_or;
+"or"        { yylval->op = new std::string(yytext); return T_or; }
 "ref"       return T_ref; 
 "return"    return T_ret; 
 "skip"      return T_skip; 
-"true"      return T_true; 
+"true"      { yylval->btype = new std::string(yytext); return T_true; } 
 "var"       return T_var; 
 ":="        return T_asgn; 
 ":"         return T_col; 
-"<="        return T_leq; 
-">="        return T_geq; 
-"<>"        return T_neq; 
+"<="        { yylval->op = new std::string(yytext); return T_leq; } 
+">="        { yylval->op = new std::string(yytext); return T_geq; }
+"<>"        { yylval->op = new std::string(yytext); return T_neq; } 
 	
-[\+\-\*\/\%\!\&\|\=\<\>\(\)\[\]\,]  return yytext[0]; 
+[\+\-\*\/\%\!\&\|\=\<\>\(\)\[\]\,]  { yylval->op = new std::string(yytext); return yytext[0]; }
 
-{L}({L}|{D}|_)*     { yylval->str = new std::string(yytext); return T_id; }
+{L}({L}|{D}|_)*     { yylval->name = new std::string(yytext); return T_id; }
 {D}+                { yylval->num = atoi(yytext); return T_const; } 
 
 '({D}|{L}|{ESC}|{P}|" ")'   { yylval->ch_cnst = yytext[0]; return T_char;}
