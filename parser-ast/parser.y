@@ -56,7 +56,7 @@
 %left<op> 		"and"
 %precedence 	UNOTNOT
 %nonassoc<op> 	'=' "<>" '>' '<' "<=" ">="
-%left<op> 		'+' '-' '|'
+%left<op> 		'+' '-' '|' 
 %left<op> 		'*' '/' '%' '&'
 %precedence 	UPLUS UMINUS UNOT
 
@@ -86,6 +86,7 @@
 %type<fpartype> fpar_type type
 %type<stmt>     block stmt_list stmt elif_cond_block_list else_col_block
 %type<cond>     cond
+%type<op>       '!'
 
 %%
 
@@ -127,7 +128,7 @@ data_type   : "int"  { $$ = new DataType($1); }
 
 fpar_type   : type					        			{ $$ = $1; }
             | "ref" data_type							{ $$ = new RefPar($2); }
-            | data_type '[' ']' bracket_int_const_list  { $$ = new ArrayPar($1, $3); } 
+            | data_type '[' ']' bracket_int_const_list  { $$ = new ArrayPar($1, $4); } 
             ;
 
 bracket_int_const_list  : %empty 								 { $$ = new BracketList(); }
@@ -211,7 +212,7 @@ proc_call   : T_id one_col_expr { $$ = new ProcCall(new Id($1), $2); }
             ;
 
 one_col_expr    : %empty 			 { $$ = nullptr; } //nothing cause it's non recursive
-                | ":" expr expr_list { if(!$3->empty()){$3->prepend($2); $$ = new OneColExpr($2);} else{$$ = new OneColExpr($1)}; } 
+                | ":" expr expr_list { if(!$3->empty()){$3->prepend($2); $$ = new OneColExpr($3);} else{$$ = new OneColExpr($2)}; } 
                 ;
 
 expr_list   : %empty 			 { $$ = new ExprList(); }

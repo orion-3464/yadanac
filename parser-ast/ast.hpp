@@ -3,10 +3,30 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
+
+class Header;
+class LocalDefList;
+class Block;
+class Id;
+class Type;
+class IsDataType;
+class ColFparDef;
+class FparDef;
+class DataType;
+class Const;
+class Expr;
+class OneColExpr;
+class Cond;
+class Elif;
+class Else;
+class ColId;
+class FparType;
+class LocalDef;
 
 class AST {
 	public:
-	virtual void printAST(std::ostream &out) const=0;
+	virtual void printAST(std::ostream &out) const = 0;
 
 	private:
 };
@@ -19,8 +39,12 @@ inline std::ostream &operator<<(std::ostream &out, const AST &ast) {
 class FparType : public AST {
 public:
 private:
-}
+};
 
+class Cond : public AST {
+public:
+private:
+};
 class Expr : public Cond {
 public:
 private: 
@@ -36,11 +60,6 @@ public:
 private:
 };
 
-class Cond : public AST {
-public:
-private:
-};
-
 class Block : public Stmt { //ena block einai ena stmt_list !!
 public:
     Block() : stmt_list() {}
@@ -48,10 +67,11 @@ public:
 	void append(Stmt *s) { stmt_list.push_back(s); }
     void prepend(Stmt *s) { stmt_list.insert(stmt_list.begin(), s); }
     bool empty() const { return stmt_list.empty(); }
+
     virtual void printAST(std::ostream &out) const override {
         out << "Block(";
         bool first = true;
-        for (const auto &s : stmt_list) {
+        for(const auto &s : stmt_list) {
             if (!first) out << ", ";
             first = false;
             out << *s;
@@ -67,6 +87,7 @@ public:
     LValue(Expr *str){ list.push_back(str); }
     
 	void append(Expr *e) { list.push_back(e); }
+
     virtual void printAST(std::ostream &out) const override {
         out << "LValue(";
         bool first = true;
@@ -109,7 +130,7 @@ private:
 
 class FuncDecl : public LocalDef {
 public:
-    Decl(Header *h) : header(h) {}
+    FuncDecl(Header *h) : header(h) {}
 
     virtual void printAST(std::ostream &out) const override {
         out << "Decl(" << " decl " << *header << ")";
@@ -165,7 +186,8 @@ private:
 
 class FparDef : public AST {
 public:
-	FparDef(Id *i, FparType *t;) : name(i), type(t) {}
+    FparDef() : name(nullptr), type(nullptr) {}
+	FparDef(Id *i, FparType *t) : name(i), type(t) {}
     
 	virtual void printAST(std::ostream &out) const override {
         out << "FparDef(" << name << " as " << type << ")";
@@ -182,6 +204,7 @@ public:
 	void append(FparDef *d) { def_list.push_back(d); }
     void prepend(FparDef *d) { def_list.insert(def_list.begin(), d); }
     bool empty() const { return def_list.empty(); }
+
     virtual void printAST(std::ostream &out) const override {
         out << "FparDefList(";
     	bool first = true;
@@ -198,7 +221,7 @@ private:
 
 class IsDataType : public AST {
 public:
-    IsDataType(DataType *t;) : type(t) {}
+    IsDataType(DataType *t) : type(t) {}
     
 	virtual void printAST(std::ostream &out) const override {
         out << "IsDataType(" << " is " << type << ")";
@@ -304,7 +327,7 @@ public:
     BinOpCond(Cond *c1, std::string o, Cond *c2) : cond1(c1), op(o), cond2(c2) {}
 
     virtual void printAST(std::ostream &out) const override {
-        out << op << "(" << *type << *const_list  << ")";
+        out << op << "(" << *cond1 << ", " << *cond2  << ")";
     }
 private:
     Cond *cond1, *cond2;
@@ -313,12 +336,11 @@ private:
 
 class Skip : public Stmt {
 public:
-    Skip() :  {}
+    Skip() {}
 
     virtual void printAST(std::ostream &out) const override {
         out << "Skip(" <<  ")";
     }
-private:
 };
 
 class Assign : public Stmt {
@@ -335,12 +357,11 @@ private:
 
 class Exit : public Stmt { 
 public:
-    Exit() : {}
+    Exit() {}
 
     virtual void printAST(std::ostream &out) const override {
-        out << "Exit(" <<  << ")";
+        out << "Exit(" << ")";
     }
-private:
 };
 
 class IfThenElse : public Stmt {
@@ -351,12 +372,15 @@ public:
         out << "IfThenElse(" << *cond << ", " << *block << ", " << *elif << ", " << *els  << ")";
     }
 private:
-    DataType *type;
-    Const *const_list;
+    Cond *cond;
+    Block *block;
+    Elif *elif;
+    Else *els;
 };
 
 class Elif : public Stmt {
 public:
+    Elif() : block(nullptr), cond(nullptr) {}
     Elif(Cond *c, Block *b) : cond(c), block(b) {}
 
     virtual void printAST(std::ostream &out) const override {
@@ -367,7 +391,7 @@ private:
     Cond *cond;
 };
 
-class ElifList : public ELif {
+class ElifList : public Elif {
     ElifList() : elif_list() {}
 
     void append(Elif *e) { elif_list.push_back(e); }
@@ -448,19 +472,19 @@ public:
     	out << op << "(" << *expr << ")";
   	}
 private:
+    std::string op;
   	Expr *expr;
-  	char op;
 };
 
 class BinOpExpr : public Expr {
 public:
-  	BinOpExpr(Expr *e1, char o, Expr *e2) : expr1(e1), op(o), expr2(e2) {}
+  	BinOpExpr(Expr *e1, std::string o, Expr *e2) : expr1(e1), op(o), expr2(e2) {}
   	void printAST(std::ostream &out) const override {
     	out << op << "(" << *expr1 << ", " << *expr2 << ")";
   	}
 private:
   	Expr *expr1;
-  	char op;
+  	std::string op;
   	Expr *expr2;
 };
 
@@ -488,6 +512,7 @@ private:
 
 class Id : public Expr {
 public:
+    Id() {}
     Id(std::string s) : name(s) {}
 
     virtual void printAST(std::ostream &out) const override {
@@ -502,7 +527,7 @@ public:
     IdList() : id_list() {}
     
 	void append(Id *i) { id_list.push_back(i); }
-    void prepend(Id *i) { id_list.insert(def_list.begin(), i); }
+    void prepend(Id *i) { id_list.insert(id_list.begin(), i); }
     bool empty() const { return id_list.empty(); }
     virtual void printAST(std::ostream &out) const override {
         out << "IdList(";
@@ -529,6 +554,7 @@ private:
     Id *name;
 };
 
+
 class Char : public Expr {
 public:
     Char(char c) : ch(c) {}
@@ -542,6 +568,7 @@ private:
 
 class Const : public Expr {
 public:
+    Const() {}
     Const(int n) : num(n) {}
 
     virtual void printAST(std::ostream &out) const override {
