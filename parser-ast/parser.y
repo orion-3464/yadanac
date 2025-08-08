@@ -74,19 +74,43 @@
     Expr* expr;
     Stmt* stmt;
     LocalDef* localdef;
-    Cond* cond;
     FparDef* fpardef;
-    AST* ast;
+    Header* header;
+	ColFparDef* colfpardef;
+	ColId* colid;
+	DataType* datatype;
+	IsDataType* isdatatype;
+	OneColExpr* onecolexpr;
+	LocalDefList* localdeflist;
+	FparDefList* fpardeflist;
+	IdList* idlist;
+	Block*	block;
+	ElifList* eliflist;
+	ExprList* exprlist;
+	BracketList* bracketlist;
+	LValue* lvalue;
 }
   
-%type<ast>      program header is_data_type col_fpar_def data_type col_id proc_call one_col_expr func_call
-%type<localdef> func_def local_def_list func_decl var_def local_def
-%type<fpardef>  fpar_def_list fpar_def
-%type<expr>     id_list bracket_int_const_list one_id l_value expr expr_list one_expr
-%type<fpartype> fpar_type type
-%type<stmt>     block stmt_list stmt elif_cond_block_list else_col_block
-%type<cond>     cond
-%type<op>       '!'
+%type<onecolexpr>   one_col_expr
+%type<lvalue>		l_value
+%type<header>		header
+%type<datatype>		data_type
+%type<isdatatype>	is_data_type
+%type<colid>		col_id
+%type<colfpardef> 	col_fpar_def
+%type<localdeflist> local_def_list
+%type<fpardeflist>  fpar_def_list
+%type<idlist>  		id_list
+%type<block>  		block stmt_list
+%type<eliflist>		elif_cond_block_list
+%type<localdef> 	func_def func_decl var_def local_def
+%type<fpardef>  	fpar_def
+%type<bracketlist>	bracket_int_const_list
+%type<exprlist>		expr_list
+%type<expr>     	one_id expr one_expr func_call cond
+%type<fpartype> 	fpar_type type 
+%type<stmt>     	stmt else_col_block proc_call
+%type<op>       	'!'
 
 %%
 
@@ -100,7 +124,7 @@ local_def_list  : %empty 				   { $$ = new LocalDefList(); }
                 | local_def_list local_def { $1->append($2); $$ = $1; }
                 ;
 
-header  : T_id is_data_type col_fpar_def { $$ = new Header(new Id($1), $2, $3); } 
+header  : T_id is_data_type col_fpar_def { $$ = new Header(new Id(*$1), $2, $3); } 
         ;
 
 is_data_type    : %empty 		 { $$ = nullptr; } //nothing cause it's non recursive
@@ -108,22 +132,22 @@ is_data_type    : %empty 		 { $$ = nullptr; } //nothing cause it's non recursive
                 ;
 
 col_fpar_def    : %empty 					 { $$ = nullptr; } 
-                | ":" fpar_def fpar_def_list { if(!$3->empty()){$3->prepend($2); $$ = $3;} else{$$ = $2} } 
+                | ":" fpar_def fpar_def_list { $3->append($2); $$ = new ColFparDef($3); } 
                 ;
 
 fpar_def_list   : %empty 					 { $$ = new FparDefList(); }
                 | fpar_def_list ',' fpar_def { $1->append($3); $$ = $1; }
                 ;
 
-fpar_def    : T_id id_list "as" fpar_type { if(!$2->empty()){$2->prepend(new Id($1)); $$ = new FparDef($2, $4);} else{ $$ = new FparDef(new Id($1), $4);} } 
+fpar_def    : T_id id_list "as" fpar_type { $2->prepend(new Id(*$1)); $$ = new FparDef($2, $4);}
             ;
 
 id_list : %empty 	   { $$ = new IdList(); }
-        | id_list T_id { $1->append(new Id($2)); $$ = $1; }
+        | id_list T_id { $1->append(new Id(*$2)); $$ = $1; }
         ;
 
-data_type   : "int"  { $$ = new DataType($1); } 
-            | "byte" { $$ = new DataType($1); } 
+data_type   : "int"  { $$ = new DataType(*$1); } 
+            | "byte" { $$ = new DataType(*$1); } 
             ;
 
 fpar_type   : type					        			{ $$ = $1; }
@@ -146,11 +170,11 @@ type    : data_type bracket_int_const_list { $$ = new Type($1, $2); }
 func_decl   : "decl" header  { $$ = new FuncDecl($2); }
             ;
 
-var_def : "var" T_id id_list "is" type { if(!$3->empty()){$3->prepend($2); $$ = new VarDef($3, $5);} else{$$ = new VarDef($2, $5)}; } 
+var_def : "var" T_id id_list "is" type {$3->prepend(new Id(*$2)); $$ = new VarDef($3, $5);}  
         ;
 
-block   : "begin" stmt stmt_list "end" { if(!$3->empty()){$3->prepend($2); $$ = $3;} else{$$ = $2}; } 
-        | stmt stmt_list T_auto_end    { if(!$2->empty()){$2->prepend($1); $$ = $2;} else{$$ = $1}; }
+block   : "begin" stmt stmt_list "end" {$3->prepend($2); $$ = $3;} 
+        | stmt stmt_list T_auto_end    {$2->prepend($1); $$ = $2;} 
         ;
 
 stmt_list   : %empty 		 { $$ = new Block(); }
@@ -169,7 +193,7 @@ stmt    : "skip"                                                        { $$ = n
         ;
 
 elif_cond_block_list    : %empty 									 { $$ = new ElifList(); }
-                        | elif_cond_block_list "elif" cond ":" block { $1->append($3, $5); $$ = $1; }
+                        | elif_cond_block_list "elif" cond ":" block { Elif *elif= new Elif($3, $5); $1->append(elif); $$ = $1; }
                         ;
 
 else_col_block  : %empty 		   { $$ = nullptr; } //nothing cause it's non recursive
@@ -177,15 +201,15 @@ else_col_block  : %empty 		   { $$ = nullptr; } //nothing cause it's non recursi
                 ;
 
 one_id  : %empty { $$ = nullptr; }//nothing cause it's non recursive
-        | T_id   { $$ = new Id($1); }
+        | T_id   { $$ = new Id(*$1); }
         ;
 
 col_id  : %empty	{ $$ = nullptr; }//nothing cause it's non recursive
-        | ":" T_id  { $$ = new ColId(new Id($2)); }
+        | ":" T_id  { $$ = new ColId(new Id(*$2)); }
         ;
 
-l_value : T_id                  { $$ = new LValue(Id($1)); } 
-        | T_str                 { $$ = new LValue(Str($1)); }
+l_value : T_id                  { $$ = new LValue(new Id(*$1)); } 
+        | T_str                 { $$ = new LValue(new Str(*$1)); }
         | l_value '[' expr ']'  { $1->append($3); $$ = $1; }
         ;
 
@@ -194,49 +218,49 @@ expr    : T_const   				{ $$ = new Const($1); }
         | l_value   				{ $$ = $1; }
         | '(' expr ')' 				{ $$ = $2; }
         | func_call    				{ $$ = $1; }
-        | '+' expr %prec UPLUS 		{ $$ = UnaryOpExpr($1, $2); }
-        | '-' expr %prec UMINUS		{ $$ = UnaryOpExpr($1, $2); }
-        | expr '+' expr 			{ $$ = BinOpExpr($1, $2, $3); }
-        | expr '-' expr 			{ $$ = BinOpExpr($1, $2, $3); }
-        | expr '*' expr 			{ $$ = BinOpExpr($1, $2, $3); }
-        | expr '/' expr 			{ $$ = BinOpExpr($1, $2, $3); }
-        | expr '%' expr 			{ $$ = BinOpExpr($1, $2, $3); }
-        | "true"  					{ $$ = new BoolVal($1); } 
-        | "false" 					{ $$ = new BoolVal($1); }
-        | '!' expr %prec UNOT		{ $$ = UnaryOpExpr($1, $2); }
-        | expr '&' expr 			{ $$ = BinOpExpr($1, $2, $3); }
-        | expr '|' expr 			{ $$ = BinOpExpr($1, $2, $3); }
+        | '+' expr %prec UPLUS 		{ $$ = new UnaryOpExpr(*$1, $2); }
+        | '-' expr %prec UMINUS		{ $$ = new UnaryOpExpr(*$1, $2); }
+        | expr '+' expr 			{ $$ = new BinOpExpr($1, *$2, $3); }
+        | expr '-' expr 			{ $$ = new BinOpExpr($1, *$2, $3); }
+        | expr '*' expr 			{ $$ = new BinOpExpr($1, *$2, $3); }
+        | expr '/' expr 			{ $$ = new BinOpExpr($1, *$2, $3); }
+        | expr '%' expr 			{ $$ = new BinOpExpr($1, *$2, $3); }
+        | "true"  					{ $$ = new BoolVal(*$1); } 
+        | "false" 					{ $$ = new BoolVal(*$1); }
+        | '!' expr %prec UNOT		{ $$ = new UnaryOpExpr(*$1, $2); }
+        | expr '&' expr 			{ $$ = new BinOpExpr($1, *$2, $3); }
+        | expr '|' expr 			{ $$ = new BinOpExpr($1, *$2, $3); }
         ;
 
-proc_call   : T_id one_col_expr { $$ = new ProcCall(new Id($1), $2); } 
+proc_call   : T_id one_col_expr { $$ = new ProcCall(new Id(*$1), $2); } 
             ;
 
 one_col_expr    : %empty 			 { $$ = nullptr; } //nothing cause it's non recursive
-                | ":" expr expr_list { if(!$3->empty()){$3->prepend($2); $$ = new OneColExpr($3);} else{$$ = new OneColExpr($2)}; } 
+                | ":" expr expr_list {$3->prepend($2); $$ = new OneColExpr($3);}  
                 ;
 
 expr_list   : %empty 			 { $$ = new ExprList(); }
             | expr_list ',' expr { $1->append($3); $$ = $1; }
             ; 
 
-func_call   : T_id '(' one_expr ')' { $$ = FuncCall(new Id($1), $3); } 
+func_call   : T_id '(' one_expr ')' { $$ = new FuncCall(new Id(*$1), $3); } 
             ;
 
 one_expr    : %empty 		 { $$ = nullptr; } //nothing cause it's non recursive
-            | expr expr_list { if(!$2->empty()){$2->prepend($1); $$ = $2;} else{$$ = $1}; }
+            | expr expr_list {$2->prepend($1); $$ = $2;} 
             ;
 
 cond    : expr						{ $$ = $1; }
         | '(' cond ')'				{ $$ = $2; }
         | "not" cond %prec UNOTNOT	{ $$ = new NotCond($2); }
-        | cond "and" cond			{ $$ = BinOpCond($1, $2, $3); }
-        | cond "or" cond			{ $$ = BinOpCond($1, $2, $3); }
-        | expr '=' expr				{ $$ = BinOpExpr($1, $2, $3); }
-        | expr "<>" expr			{ $$ = BinOpExpr($1, $2, $3); }
-        | expr '<' expr				{ $$ = BinOpExpr($1, $2, $3); }
-        | expr '>' expr				{ $$ = BinOpExpr($1, $2, $3); }
-        | expr "<=" expr			{ $$ = BinOpExpr($1, $2, $3); }
-        | expr ">=" expr			{ $$ = BinOpExpr($1, $2, $3); }
+        | cond "and" cond			{ $$ = new BinOpCond($1, *$2, $3); }
+        | cond "or" cond			{ $$ = new BinOpCond($1, *$2, $3); }
+        | expr '=' expr				{ $$ = new BinOpExpr($1, *$2, $3); }
+        | expr "<>" expr			{ $$ = new BinOpExpr($1, *$2, $3); }
+        | expr '<' expr				{ $$ = new BinOpExpr($1, *$2, $3); }
+        | expr '>' expr				{ $$ = new BinOpExpr($1, *$2, $3); }
+        | expr "<=" expr			{ $$ = new BinOpExpr($1, *$2, $3); }
+        | expr ">=" expr			{ $$ = new BinOpExpr($1, *$2, $3); }
         ;
 
 %%
