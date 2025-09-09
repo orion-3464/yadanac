@@ -26,6 +26,7 @@ class LocalDef;
 
 class AST {
 	public:
+    virtual ~AST() = default;
 	virtual void printAST(std::ostream &out) const = 0;
 };
 	
@@ -108,7 +109,10 @@ public:
     Header(Expr *s, IsDataType *d, ColFparDef *c) : name(s), is_d_type(d), col_def(c) {}
 
     void printAST(std::ostream &out) const override {
-        out << "Header" << "(" << *name << ", " << *is_d_type << ", " << *col_def << ")";
+        out << "Header" << "(" << *name << ", ";
+        
+        (is_d_type) ? out << *is_d_type << ", " : out << "NO_DATA_TYPE, ";  
+        (col_def) ? out << *col_def << ")" : out << "NO_COL_DEF), ";  
     }
 private:
     Expr *name;
@@ -314,7 +318,8 @@ public:
     ProcCall(Expr *i, OneColExpr *e) : name(i), col_expr(e) {}
 
     void printAST(std::ostream &out) const override {
-        out << "ProcCall(" << *name << ", " << *col_expr  << ")";
+        out << "ProcCall(" << *name << ", ";
+        (col_expr) ? out << *col_expr  << ")" : out << "NO_ARGS)"; 
     }
 private:
     Expr *name;
@@ -326,7 +331,8 @@ public:
     FuncCall(Expr *i, Expr *e) : name(i), expr(e) {}
 
     void printAST(std::ostream &out) const override {
-        out << "FuncCall(" << *name << ", " << *expr  << ")";
+        out << "FuncCall(" << *name << ", ";
+        (expr) ? out << *expr  << ")" : out << "NO_ARGS)";
     }
 private:
     Expr *name;

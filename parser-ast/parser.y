@@ -196,15 +196,15 @@ elif_cond_block_list    : %empty 									 { $$ = new ElifList(); }
                         | elif_cond_block_list "elif" cond ":" block { Elif *elif= new Elif($3, $5); $1->append(elif); $$ = $1; }
                         ;
 
-else_col_block  : %empty 		   { $$ = nullptr; } //nothing cause it's non recursive
+else_col_block  : %empty 		   { $$ = nullptr; } 
                 | "else" ":" block { $$ = new Else($3); }
                 ;
 
-one_id  : %empty { $$ = nullptr; }//nothing cause it's non recursive
+one_id  : %empty { $$ = nullptr; }
         | T_id   { $$ = new Id(*$1); delete $1; }
         ;
 
-col_id  : %empty	{ $$ = nullptr; }//nothing cause it's non recursive
+col_id  : %empty	{ $$ = nullptr; }
         | ":" T_id  { $$ = new ColId(new Id(*$2)); delete $2; }
         ;
 
@@ -235,7 +235,7 @@ expr    : T_const   				{ $$ = new Const($1); }
 proc_call   : T_id one_col_expr { $$ = new ProcCall(new Id(*$1), $2); delete $1; } 
             ;
 
-one_col_expr    : %empty 			 { $$ = nullptr; } //nothing cause it's non recursive
+one_col_expr    : %empty 			 { $$ = nullptr; } 
                 | ":" expr expr_list {$3->prepend($2); $$ = new OneColExpr($3);}  
                 ;
 
@@ -246,7 +246,7 @@ expr_list   : %empty 			 { $$ = new ExprList(); }
 func_call   : T_id '(' one_expr ')' { $$ = new FuncCall(new Id(*$1), $3); delete $1; } 
             ;
 
-one_expr    : %empty 		 { $$ = nullptr; } //nothing cause it's non recursive
+one_expr    : %empty 		 { $$ = nullptr; } 
             | expr expr_list {$2->prepend($1); $$ = $2;} 
             ;
 
