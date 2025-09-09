@@ -145,7 +145,7 @@ public:
         for(const auto &s : stmt_list) {
             if (!first) out << ", ";
             first = false;
-            out << *s;
+            (s) ? out << *s : out << "null-stmt";
         }
         out << ")";
     }
@@ -248,7 +248,7 @@ public:
         for (const auto &d : def_list) {
             if (!first) out << ", ";
             first = false;
-            out << *d;
+            (d) ? out << *d : out << "null-definition";
         }
         out << ")";
     }
@@ -270,7 +270,7 @@ public:
     	for (const auto &d : def_list) {  
     		if (!first) out << ", ";
      		first = false;
-      		out << *d;
+            (d) ? out << *d : out << "no-params";
     	}
     	out << ")";     
 	}	
@@ -398,7 +398,8 @@ public:
     IfThenElse(Expr *c, Block *b, Stmt *ef, Stmt *e) : cond(c), block(b), elif(ef), els(e) {}
 
     void printAST(std::ostream &out) const override {
-        out << "IfThenElse(" << *cond << ", " << *block << ", " << *elif << ", " << *els  << ")";
+        out << "IfThenElse(" << *cond << ", "<< *block << ", " << *elif << ", ";
+        (els) ? out << *els  << ")" : out << "no-else)";
     }
 private:
     Expr *cond;
@@ -455,7 +456,9 @@ public:
     Loop(Expr *i, Block *b) : name(i), block(b) {}
 
     void printAST(std::ostream &out) const override {
-        out << "Loop(" << *name << ", " <<  *block  << ")";
+        out << "Loop(";
+        (name) ? out << *name << ", " : out << "no-name loop, "; 
+        out <<  *block  << ")";
     }
 private:
     Expr *name;
@@ -467,7 +470,8 @@ public:
     Break(ColId *c) : col_id(c) {}
 
     void printAST(std::ostream &out) const override {
-        out << "Break(" << *col_id  << ")";
+        out << "Break(";
+        (col_id) ? out << *col_id  << ")" : out << "no-id)";
     }
 private:
     ColId *col_id;
