@@ -281,6 +281,10 @@ class FuncDecl : public LocalDef {
 public:
     FuncDecl(Header *h) : header(h) {}
 
+    ~FuncDecl() override {
+        delete header;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "Decl(" << " decl " << *header << ")";
     }
@@ -345,6 +349,11 @@ class Type : public FparType {
 public:
     Type(DataType *t, Expr *c) : type(t), const_list(c) {}
     
+    ~Type() override {
+        delete type;
+        delete const_list;
+    }
+
 	void printAST(std::ostream &out) const override {
         out << "Type(" << *type << ", " << *const_list  << ")";
     }
@@ -374,6 +383,10 @@ class RefPar : public FparType {
 public:
     RefPar(DataType *t) : type(t) {}
  
+    ~RefPar() override {
+        delete type;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "RefPar(" << "ref" << *type  << ")";
     }
@@ -384,6 +397,11 @@ private:
 class ProcCall : public Stmt {
 public:
     ProcCall(Expr *i, OneColExpr *e) : name(i), col_expr(e) {}
+
+    ~ProcCall() override {
+        delete name;
+        if(col_expr) delete col_expr;
+    }
 
     void printAST(std::ostream &out) const override {
         out << "ProcCall(" << *name << ", ";
@@ -398,6 +416,11 @@ class FuncCall : public Expr {
 public:
     FuncCall(Expr *i, Expr *e) : name(i), expr(e) {}
 
+    ~FuncCall() override {
+        delete name;
+        if(expr) delete expr;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "FuncCall(" << *name << ", ";
         (expr) ? out << *expr  << ")" : out << "NO_ARGS)";
@@ -411,6 +434,10 @@ class NotCond : public Cond {
 public:
     NotCond(Expr *c) : cond(c) {}
 
+    ~NotCond() override {
+        delete cond;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "NotCond(" << "not " << *cond  << ")";
     }
@@ -421,6 +448,11 @@ private:
 class BinOpCond : public Cond {
 public:
     BinOpCond(Expr *c1, std::string o, Expr *c2) : cond1(c1), op(o), cond2(c2) {}
+
+    ~BinOpCond() override {
+        delete cond1;
+        delete cond2;
+    }
 
     void printAST(std::ostream &out) const override {
         out << op << "(" << *cond1 << ", " << *cond2  << ")";
@@ -444,6 +476,11 @@ class Assign : public Stmt {
 public:
     Assign(Expr *l, Expr *e) : lvalue(l), expr(e) {}
 
+    ~Assign() override {
+        delete lvalue;
+        delete expr;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "Assign(" << *lvalue << " := " << *expr  << ")";
     }
@@ -465,6 +502,13 @@ class IfThenElse : public Stmt {
 public:
     IfThenElse(Expr *c, Block *b, Stmt *ef, Stmt *e) : cond(c), block(b), elif(ef), els(e) {}
 
+    ~IfThenElse() override {
+        delete cond;
+        delete block;
+        delete elif;
+        if(els) delete els;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "IfThenElse(" << *cond << ", "<< *block << ", " << *elif << ", ";
         (els) ? out << *els  << ")" : out << "no-else)";
@@ -480,6 +524,11 @@ class Elif : public Stmt {
 public:
     Elif() : block(nullptr), cond(nullptr) {}
     Elif(Expr *c, Block *b) : cond(c), block(b) {}
+
+    ~Elif() override {
+        delete cond;
+        delete block;
+    }
 
     void printAST(std::ostream &out) const override {
         out << "Elif(" << *cond << " : "  << *block  << ")";
@@ -518,6 +567,10 @@ class Else : public Stmt {
 public:
     Else(Block *b) : block(b) {}
 
+    ~Else() override {
+        delete block;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "Else(" << *block  << ")";
     }
@@ -528,6 +581,11 @@ private:
 class Loop : public Stmt {
 public:
     Loop(Expr *i, Block *b) : name(i), block(b) {}
+
+    ~Loop() override {
+        delete block;
+        if(name) delete name;
+    }
 
     void printAST(std::ostream &out) const override {
         out << "Loop(";
@@ -543,6 +601,10 @@ class Break : public Stmt {
 public:
     Break(ColId *c) : col_id(c) {}
 
+    ~Break() override {
+        if(col_id) delete col_id;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "Break(";
         (col_id) ? out << *col_id  << ")" : out << "no-id)";
@@ -555,8 +617,13 @@ class Continue : public Stmt {
 public:
     Continue(ColId *c) : col_id(c) {}
 
+    ~Continue() override {
+        if(col_id) delete col_id;
+    }
+
     void printAST(std::ostream &out) const override {
-        out << "Continue(" << *col_id  << ")";
+        out << "Continue(";
+        (col_id) ? out << *col_id  << ")" : out << "no-id)";
     }
 private:
     ColId *col_id;
@@ -565,6 +632,10 @@ private:
 class Return : public Stmt {
 public:
     Return(Expr *e) : expr(e) {}
+
+    ~Return() override {
+        delete expr;
+    }
     
     void printAST(std::ostream &out) const override {
         out << "Return(" << *expr << ")";
@@ -576,6 +647,11 @@ private:
 class UnaryOpExpr : public Expr {
 public:
   	UnaryOpExpr(std::string o, Expr *e) : op(o), expr(e) {}
+
+    ~UnaryOpExpr() override {
+        delete expr;
+    }
+
   	void printAST(std::ostream &out) const override {
     	out << op << "(" << *expr << ")";
   	}
@@ -587,6 +663,12 @@ private:
 class BinOpExpr : public Expr {
 public:
   	BinOpExpr(Expr *e1, std::string o, Expr *e2) : expr1(e1), op(o), expr2(e2) {}
+
+    ~BinOpExpr() override {
+        delete expr1;
+        delete expr2;
+    }
+
   	void printAST(std::ostream &out) const override {
     	out << op << "(" << *expr1 << ", " << *expr2 << ")";
   	}
