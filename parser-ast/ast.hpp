@@ -52,6 +52,11 @@ public:
 	FparDef() : name(nullptr), type(nullptr) {} 
     FparDef(Expr *i, FparType *t) : name(i), type(t) {}
 
+    ~FparDef() override {
+        delete name;
+        delete type;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "FparDef(" << *name  << " as " << type << ")";
     }
@@ -64,6 +69,10 @@ class ColFparDef : public AST {
 public:
     ColFparDef(FparDef *f) : def(f) {}
 
+    ~ColFparDef() override {
+        delete def;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "ColFparDef(" << " : "  << *def << ")";
     }
@@ -74,6 +83,10 @@ private:
 class ColId : public AST {
 public:
     ColId(Expr *i) : name(i) {}
+
+    ~ColId() override {
+        delete name;
+    }
 
     void printAST(std::ostream &out) const override {
         out << "ColId(" << " : " <<  *name  << ")";
@@ -97,6 +110,10 @@ class IsDataType : public AST {
 public:
     IsDataType(DataType *t) : type(t) {}
 
+    ~IsDataType() override {
+        delete type;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "IsDataType(" << " is " << type << ")";
     }
@@ -107,6 +124,12 @@ private:
 class Header : public AST {
 public:
     Header(Expr *s, IsDataType *d, ColFparDef *c) : name(s), is_d_type(d), col_def(c) {}
+
+    ~Header() override {
+        delete name;
+        if(is_d_type) delete is_d_type;
+        if(col_def) delete col_def;
+    }
 
     void printAST(std::ostream &out) const override {
         out << "Header" << "(" << *name << ", ";
@@ -124,6 +147,10 @@ class OneColExpr : public AST {
 public:
     OneColExpr(Expr *e) : expr(e) {}
 
+    ~OneColExpr() override {
+        delete expr;
+    }
+
     void printAST(std::ostream &out) const override {
         out << "OneColExpr(" << " : " <<  *expr  << ")";
     }
@@ -135,6 +162,11 @@ class Block : public Stmt { //ena block einai ena stmt_list !!
 public:
     Block() : stmt_list() {}
     
+    ~Block() override {
+        for (auto stmt : stmt_list)
+            if(stmt) delete stmt;
+    }
+
 	void append(Stmt *s) { stmt_list.push_back(s); }
     void prepend(Stmt *s) { stmt_list.insert(stmt_list.begin(), s); }
     bool empty() const { return stmt_list.empty(); }
@@ -160,6 +192,11 @@ class ExprList : public Expr {
 public:
     ExprList() : expr_list() {}
  
+    ~ExprList() override {
+        for (auto expr : expr_list)
+            if(expr) delete expr;
+    }
+
     void append(Expr *e) { expr_list.push_back(e); }
     void prepend(Expr *e) { expr_list.insert(expr_list.begin(), e); }
     bool empty() const { return expr_list.empty(); }
@@ -170,7 +207,7 @@ public:
         for(const auto &e : expr_list) {
             if (!first) out << ", ";
             first = false;
-            out << *e;
+            (e) ? out << *e : out << "null-expr";
         }
         out << ")";
     }
@@ -181,6 +218,11 @@ private:
 class LValue : public Expr {
 public:
     LValue(Expr *str){ list.push_back(str); }
+
+    ~LValue() override {
+        for(auto l : list)
+            if(l) delete l;
+    }
     
 	void append(Expr *e) { list.push_back(e); }
 
@@ -202,6 +244,12 @@ class FuncDef : public LocalDef {
 public:
 	FuncDef(Header *h, LocalDef *l, Block *b) : head(h), def_list(l), block(b) {}
     
+    ~FuncDef() override {
+        delete head;
+        delete def_list;
+        delete block;
+    }
+
 	void printAST(std::ostream &out) const override {
     	out << "Def" << "(" << *head << ", " << *def_list << ", " << *block << ")";
     }
@@ -216,6 +264,11 @@ class VarDef : public LocalDef {
 public:
 	VarDef(Expr *i, FparType *t) : name(i), type(t) {}
     
+    ~VarDef() override {
+        delete type;
+        delete name;
+    }
+
 	void printAST(std::ostream &out) const override {
     	out << "VarDef(" << *name << " is " << *type << ")";
     }
@@ -238,6 +291,11 @@ private:
 class LocalDefList : public LocalDef {
 public:
     LocalDefList() : def_list() {}
+
+    ~LocalDefList() override {
+        for(auto d : def_list) 
+            if(d) delete d;
+    }
     
 	void append(LocalDef *d) { def_list.push_back(d); }
     void prepend(LocalDef *d) { def_list.insert(def_list.begin(), d); }
@@ -259,6 +317,11 @@ private:
 class FparDefList : public FparDef {
 public:
     FparDefList() : def_list() {}
+
+    ~FparDefList() override {
+        for(auto d : def_list)
+            if(d) delete d;
+    }
 	
 	void append(FparDef *d) { def_list.push_back(d); }
     void prepend(FparDef *d) { def_list.insert(def_list.begin(), d); }
@@ -293,6 +356,11 @@ private:
 class ArrayPar : public FparType {
 public:
     ArrayPar(DataType *t, Expr *c) : type(t), const_list(c) {}
+
+    ~ArrayPar() override {
+        delete type;
+        delete const_list;
+    }
 
     void printAST(std::ostream &out) const override {
         out << "ArrayPar(" << *type << "[]"  << *const_list  << ")";
@@ -424,6 +492,12 @@ private:
 class ElifList : public Elif {
 public:
     ElifList() : elif_list() {}
+
+    ~ElifList() override {
+        for(auto e : elif_list) {
+            if(e) delete e;
+        }
+    }
 
     void append(Stmt *e) { elif_list.push_back(e); }
     void printAST(std::ostream &out) const override {
@@ -559,6 +633,11 @@ private:
 class IdList : public Id {
 public:
     IdList() : id_list() {}
+
+    ~IdList() override {
+        for(auto i : id_list) 
+            if(i) delete i;
+    }
     
 	void append(Expr *i) { id_list.push_back(i); }
     void prepend(Expr *i) { id_list.insert(id_list.begin(), i); }
@@ -605,6 +684,11 @@ class BracketList : public Const {
 public:
     BracketList() : b_list() {}
  
+    ~BracketList() override {
+        for(auto b : b_list) 
+            if(b) delete b;
+    }
+
     void append(Expr *c) { b_list.push_back(c); }
     void printAST(std::ostream &out) const override {
         out << "BracketList(";
