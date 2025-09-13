@@ -220,11 +220,12 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                 yyless(0);
             }
             ++at_no;
+            
             printf("\033[0;33m");
             printf("\n Just put an auto-end on line %d or line %d \n", yylineno, num_lines);
-                    printf("\n Current identation level is %d and used case 4\n", current_indent);
+            printf("\n Current identation level is %d and used case 4\n", current_indent);
             printf("\033[0m");
-            
+
             return T_auto_end; 
 	 }
 
@@ -243,4 +244,3 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
 .   { printf("\033[1;31m"); fprintf(stderr, "illegal token\n"); printf("\033[0m"); exit(1); }
 %%
-
