@@ -58,7 +58,7 @@ public:
     }
 
     void printAST(std::ostream &out) const override {
-        out << "FparDef(" << *name  << " as " << type << ")";
+        out << "FparDef(" << *name  << " as " << *type << ")";
     }
 private:
     Expr *name;
@@ -135,7 +135,7 @@ public:
         out << "Header" << "(" << *name << ", ";
         
         (is_d_type) ? out << *is_d_type << ", " : out << "NO_DATA_TYPE, ";  
-        (col_def) ? out << *col_def << ")" : out << "NO_COL_DEF), ";  
+        (col_def) ? out << *col_def << ")" : out << "NO_COL_DEF)";  
     }
 private:
     Expr *name;
@@ -304,6 +304,7 @@ public:
 	void append(LocalDef *d) { def_list.push_back(d); }
     void prepend(LocalDef *d) { def_list.insert(def_list.begin(), d); }
     bool empty() const { return def_list.empty(); }
+
     void printAST(std::ostream &out) const override {
         out << "LocalDefList(";
         bool first = true;
@@ -724,6 +725,7 @@ public:
 	void append(Expr *i) { id_list.push_back(i); }
     void prepend(Expr *i) { id_list.insert(id_list.begin(), i); }
     bool empty() const { return id_list.empty(); }
+
     void printAST(std::ostream &out) const override {
         out << "IdList(";
         bool first = true;
