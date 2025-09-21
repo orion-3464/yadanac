@@ -19,4 +19,12 @@ parser-ast/dc
 parser-ast/*.o
 parser-ast/parser.output
 
+semantic/lexer.cpp
+semantic/parser.cpp
+semantic/parser.hpp
+semantic/dc
+semantic/*.o
+semantic/parser.output
+
+
 .vscode/
