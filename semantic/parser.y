@@ -10,6 +10,8 @@
 
 %code {
     #include "lexer.hpp"
+	
+	SymbolTable st;
 }
 
 %locations
@@ -19,7 +21,7 @@
 %token 			T_as    "as"
 %token 			T_begin "begin"
 %token 			T_break "break"
-%token<dtype> 	T_byte  "byte"
+%token		 	T_byte  "byte"
 %token 			T_cont  "continue"
 %token 			T_decl  "decl"
 %token 			T_def   "def"
@@ -27,17 +29,17 @@
 %token 			T_else  "else"
 %token 			T_end   "end"
 %token 			T_exit  "exit"
-%token<btype> 	T_false "false"
+%token		 	T_false "false"
 %token 			T_if    "if"
 %token 			T_is    "is"
-%token<dtype> 	T_int   "int"
+%token		 	T_int   "int"
 %token 			T_loop  "loop"
 %token 			T_not   "not"
 %token 			T_or    "or"
 %token 			T_ref   "ref"
 %token 			T_ret   "return"
 %token 			T_skip  "skip"
-%token<btype> 	T_true  "true"
+%token		 	T_true  "true"
 %token 			T_var   "var"
 
 %token T_asgn   ":="
@@ -66,8 +68,6 @@
     int num;
     std::string* name;
     std::string* str;
-    std::string* dtype;
-    std::string* btype;
     std::string* op;
     char ch_cnst;
     FparType* fpartype;
@@ -114,7 +114,7 @@
 
 %%
 
-program : func_def { std::cout << "AST: " << *$1 << std::endl; delete $1; }
+program : func_def { std::cout << "AST: " << *$1 << std::endl; $1->sem_analyze(); delete $1; }
 	    ;
 
 func_def    : "def" header local_def_list block { $$ = new FuncDef($2, $3, $4); } 
@@ -146,8 +146,8 @@ id_list : %empty 	   { $$ = new IdList(); }
         | id_list T_id { $1->append(new Id(*$2)); $$ = $1; delete $2; }
         ;
 
-data_type   : "int"  { $$ = new DataType(*$1); delete $1; } 
-            | "byte" { $$ = new DataType(*$1); delete $1; } 
+data_type   : "int"  { $$ = new DataType(TYPE_INT); } 
+            | "byte" { $$ = new DataType(TYPE_BYTE); } 
             ;
 
 fpar_type   : type					        			{ $$ = $1; }
@@ -225,8 +225,8 @@ expr    : T_const   				{ $$ = new Const($1); }
         | expr '*' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
         | expr '/' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
         | expr '%' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
-        | "true"  					{ $$ = new BoolVal(*$1); delete $1; } 
-        | "false" 					{ $$ = new BoolVal(*$1); delete $1; }
+        | "true"  					{ $$ = new BoolVal(true);} 
+        | "false" 					{ $$ = new BoolVal(false);}
         | '!' expr %prec UNOT		{ $$ = new UnaryOpExpr(*$1, $2); delete $1; }
         | expr '&' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
         | expr '|' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }

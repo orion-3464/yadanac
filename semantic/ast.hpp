@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include "symbol.hpp"
 
 class Header;
 class LocalDefList;
@@ -37,10 +38,25 @@ inline std::ostream &operator<<(std::ostream &out, const AST &ast) {
 	return out;
 }
 
+inline std::ostream &operator<<(std::ostream &out, BaseType t) {
+  switch (t) {
+    case TYPE_INT: out << "int"; break;
+    case TYPE_BYTE: out << "byte"; break;
+  }
+  return out;
+}
+
 class FparType : public AST {
 };
 
 class Expr : public AST {
+public:
+void check_type(BaseType expected_type) {
+    sem_analyze();
+    if (type != expected_type) yyerror("Type mismatch");
+  }
+protected:
+Type type;
 };
 
 class Stmt : public AST {
@@ -62,6 +78,11 @@ public:
     void printAST(std::ostream &out) const override {
         out << "FparDef(" << *name  << " as " << *type << ")";
     }
+
+	void sem_analyze() override{
+		st.insert(name, type); //san assign, apla to kanei i function
+	}
+	
 private:
     Expr *name;
     FparType *type;
@@ -74,10 +95,15 @@ public:
     ~ColFparDef() override {
         delete def;
     }
-
+	
     void printAST(std::ostream &out) const override {
         out << "ColFparDef(" << " : "  << *def << ")";
     }
+
+	void sem_analyze() override {
+		def->sem_analyze();	
+	}
+
 private:
     FparDef *def;
 };
@@ -89,23 +115,28 @@ public:
     ~ColId() override {
         delete name;
     }
-
+	
     void printAST(std::ostream &out) const override {
         out << "ColId(" << " : " <<  *name  << ")";
     }
+
+	void sem_analyze() override {
+		
+	}
+
 private:
     Expr *name;
 };
 
 class DataType : public AST {
 public:
-    DataType(std::string t) : type(t) {}
+    DataType(BaseType t) : type(t) {}
 
     void printAST(std::ostream &out) const override {
         out << "DataType(" << type << ")";
     }
 private:
-    std::string type;
+    BaseType type;
 };
 
 class IsDataType : public AST {
@@ -274,6 +305,10 @@ public:
 	void printAST(std::ostream &out) const override {
     	out << "VarDef(" << *name << " is " << *type << ")";
     }
+
+	void sem_analyze() override {
+		st.insert(name, type);
+	}
 private:
 	FparType *type;
 	Expr *name;
@@ -516,6 +551,13 @@ public:
         out << "IfThenElse(" << *cond << ", "<< *block << ", " << *elif << ", ";
         (els) ? out << *els  << ")" : out << "no-else)";
     }
+
+	void sem_analyze() override {
+    	cond->check_type(TYPE_BOOL);
+    	block->sem_analyze();
+    	elif->sem_analyze(); //check in elif_list if it is nullptr
+		if (els != nullptr) els->sem_analyze();
+  	}
 private:
     Expr *cond;
     Block *block;
@@ -683,13 +725,13 @@ private:
 
 class BoolVal : public Expr {
 public:
-    BoolVal(std::string s) : bool_val(s) {}
+    BoolVal(char bv) : bool_val(bv) {}
 
     void printAST(std::ostream &out) const override {
-        out << bool_val << "(" << ")";
+        out << "BoolVal" << "("<< (boolval ? "true" : "false")  << ")";
     }
 private:
-    std::string bool_val;
+    char boolval;
 };
 
 class Str : public Expr {
@@ -762,8 +804,13 @@ public:
     void printAST(std::ostream &out) const override {
         out << "Const(" << num << ")";
     }
+
+	void sem_analyze() override {
+    	type = TYPE_INT;
+  	}
 private:
     int num;
+	BaseType type;
 };
 
 class BracketList : public Const {
