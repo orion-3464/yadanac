@@ -121,7 +121,8 @@ public:
     }
 
 	void sem_analyze() override {
-		
+		st.lookup(name, "loop"); //loop is a "kind" type
+		//has no type cause it's a tag		
 	}
 
 private:
@@ -637,6 +638,13 @@ public:
         (name) ? out << *name << ", " : out << "no-name loop, "; 
         out <<  *block  << ")";
     }
+
+	void sem_analyze() override {
+		st.enterScope();
+		if(name) st.insert(name, "loop"); //loop is a kind type (enum)
+		else st.insert("", "loop")
+		block->sem_analyze();
+	}
 private:
     Expr *name;
     Block *block;
@@ -654,6 +662,11 @@ public:
         out << "Break(";
         (col_id) ? out << *col_id  << ")" : out << "no-id)";
     }
+
+	void sem_analyze() override {
+		if(col_id)col_id->sem_analyze();
+		else st.lookup("loop");
+	}
 private:
     ColId *col_id;
 };
@@ -670,6 +683,11 @@ public:
         out << "Continue(";
         (col_id) ? out << *col_id  << ")" : out << "no-id)";
     }
+
+	void sem_analyze() override {
+		if(col_id)col_id->sem_analyze();
+		else st.lookup("loop");
+	}
 private:
     ColId *col_id;
 };
