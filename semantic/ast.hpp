@@ -122,7 +122,8 @@ public:
 
 	void sem_analyze() override {
 		st.lookup(name, "loop"); //loop is a "kind" type
-		//has no type cause it's a tag		
+		//has no type cause it's a tag
+		//lookup does the check		
 	}
 
 private:
@@ -171,6 +172,16 @@ public:
         (is_d_type) ? out << *is_d_type << ", " : out << "NO_DATA_TYPE, ";  
         (col_def) ? out << *col_def << ")" : out << "NO_COL_DEF)";  
     }
+
+	void sem_analyze() override {
+		if(is_d_type){
+			data_type = new DataType(is_d_type->type);
+			st.insert(name, data_type);
+		}
+		if(col_def){
+			col_def->sem_analyze();
+		}
+	}
 private:
     Expr *name;
     IsDataType *is_d_type;
@@ -215,6 +226,12 @@ public:
         }
         out << ")";
     }
+	void sem_analyze() override {
+		for(const auto &s : stmt_list) {
+			s->sem_analyze();
+		}
+		st.exitScope();
+	}
 private:
     std::vector<Stmt *> stmt_list;
 };
@@ -245,6 +262,11 @@ public:
         }
         out << ")";
     }
+	void sem_analyze() override {
+		for(const auto &e : expr_list){
+			e->sem_analyze();
+		} 
+	}
 private:
     std::vector<Expr *> expr_list;
 };
@@ -270,6 +292,10 @@ public:
         }
         out << ")";
     }
+
+	void sem_analyze() override {
+		//not yet, needs more thinking..
+	}
 private:
     std::vector<Expr *> list;
 };
