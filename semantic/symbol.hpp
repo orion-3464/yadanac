@@ -8,4 +8,4 @@ enum BaseType {
   TYPE_ARRAY
 };
 
-#endif __SYMBOL_HPP__
+#endif //__SYMBOL_HPP__
