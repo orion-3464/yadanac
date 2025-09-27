@@ -1,6 +1,6 @@
 # -------- C++ COMPILER SETTINGS --------
 CXX := g++
-CXXFLAGS := -std=c++17 -O2 -g -Wall -Werror -Wpedantic
+CXXFLAGS := -std=c++17 -O2 -g -Wall -Wextra -Werror -Wpedantic
 
 # ---------- PROJECT STRUCTURE ----------
 
