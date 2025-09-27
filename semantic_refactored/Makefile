@@ -1,25 +1,55 @@
-.PHONY: clean distclean default
+# -------- C++ COMPILER SETTINGS --------
+CXX := g++
+CXXFLAGS := -std=c++17 -g -Wall -Werror -Wpedantic
 
-CC = g++
-CFLAGS = -Wall
+# ---------- PROJECT STRUCTURE ----------
 
-default: dc
+SRC_DIR := src
+BUILD_DIR := build
+INCLUDE := -Iinclude -I$(BUILD_DIR)
 
-lexer.cpp: lexer.l	
-	flex -s lexer.l 
+SRCS := $(wildcard $(SRC_DIR)/*.cpp) \
+        $(wildcard $(SRC_DIR)/*/*.cpp)
 
-lexer.o: lexer.cpp lexer.hpp parser.hpp
+OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS)) \
+        $(BUILD_DIR)/parser.o \
+        $(BUILD_DIR)/lexer.o
 
-parser.hpp parser.cpp: parser.y
-	bison -dv -o parser.cpp parser.y
+# ------------ DEFAULT RULES ------------
 
-parser.o: parser.cpp lexer.hpp
+TARGET := dc
 
-dc: lexer.o parser.o
-	$(CC) $(CFLAGS) -o dc lexer.o parser.o
+default: $(TARGET)
+
+$(TARGET) : $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+# ------ FLEX AND BISON GENERATORS ------
+
+$(BUILD_DIR)/parser.cpp $(BUILD_DIR)/parser.hpp: $(SRC_DIR)/parser.y | $(BUILD_DIR)
+	bison -dv -o $(BUILD_DIR)/parser.cpp $<
+
+$(BUILD_DIR)/lexer.cpp: $(SRC_DIR)/lexer.l $(BUILD_DIR)/parser.hpp | $(BUILD_DIR)
+	flex -so $@ $<
+
+# ---- C++ SOURCE FILES COMPILATION ----
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -c -o $@ $<
+
+$(BUILD_DIR)/parser.o: $(BUILD_DIR)/parser.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -c -o $@ $<
+
+$(BUILD_DIR)/lexer.o: $(BUILD_DIR)/lexer.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -c -o $@ $<
+
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
 clean:
-	$(RM) lexer.cpp parser.cpp parser.hpp parser.output *.o
+	$(RM) $(BUILD_DIR)
 
 distclean: clean
-	$(RM) dc 
+	$(RM) $(BUILD_DIR) $(TARGET)
+
+.PHONY: clean distclean default
