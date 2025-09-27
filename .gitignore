@@ -26,5 +26,11 @@ semantic/dc
 semantic/*.o
 semantic/parser.output
 
+semantic_refactored/lexer.cpp
+semantic_refactored/parser.cpp
+semantic_refactored/parser.hpp
+semantic_refactored/dc
+semantic_refactored/*.o
+semantic_refactored/parser.output
 
 .vscode/
