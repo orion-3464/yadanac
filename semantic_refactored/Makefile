@@ -47,9 +47,9 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 clean:
-	$(RM) $(BUILD_DIR)
+	rm -rf $(BUILD_DIR)
 
 distclean: clean
-	$(RM) $(BUILD_DIR) $(TARGET)
+	rm -rf $(BUILD_DIR) $(TARGET)
 
 .PHONY: clean distclean default
