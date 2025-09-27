@@ -32,5 +32,6 @@ semantic_refactored/parser.hpp
 semantic_refactored/dc
 semantic_refactored/*.o
 semantic_refactored/parser.output
+semantic_refactored/build
 
 .vscode/
