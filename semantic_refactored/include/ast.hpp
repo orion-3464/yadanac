@@ -41,7 +41,15 @@ inline std::ostream &operator<<(std::ostream &out, const AST &ast) {
 inline std::ostream &operator<<(std::ostream &out, BaseType t) {
   switch (t) {
     case TYPE_INT: out << "int"; break;
+
     case TYPE_BYTE: out << "byte"; break;
+
+    case TYPE_BOOL: break; // TO DO
+
+    case TYPE_ARRAY: break; // TO DO
+
+    default: break;
+
   }
   return out;
 }
@@ -53,10 +61,10 @@ class Expr : public AST {
 public:
 void check_type(BaseType expected_type) {
     sem_analyze();
-    if (type != expected_type) yyerror("Type mismatch");
+    // if (*type != expected_type) yyerror("Type mismatch");
   }
 protected:
-Type type;
+    Type *type;
 };
 
 class Stmt : public AST {
