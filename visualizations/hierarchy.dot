@@ -1,0 +1,64 @@
+digraph AST {
+    program;
+    func_def;
+    
+    header;
+    local_def;
+    block;
+
+    id;
+    data_type;
+    fpar_def;
+
+    fpar_type;
+
+    type;
+    int_const;
+
+    local_def;
+    func_decl;
+    var_def;
+
+    stmt;
+    l_value;
+    expr;
+    proc_call;
+    cond;
+
+    string_literal;
+    char_const;
+
+    program -> func_def;
+
+    func_def -> { header, local_def, block };
+
+    header -> { id, data_type, fpar_def };
+
+    fpar_def -> { id, fpar_type };
+
+    // data_type -> int|byte
+
+    type -> { data_type, int_const };
+
+    fpar_type -> { type, data_type, int_const };
+
+    local_def -> { func_def, func_decl, var_def };
+
+    func_decl -> header;
+
+    var_def -> { id, type };
+
+    stmt -> { l_value, expr, proc_call, block, cond, id };
+
+    block -> { stmt };
+
+    proc_call -> { id, expr };
+
+    func_call -> { id, expr };
+
+    l_value -> { id, string_literal, l_value, expr };
+
+    expr -> { int_const, char_const, l_value, expr, func_call  };
+
+    cond -> { expr, cond };
+}
