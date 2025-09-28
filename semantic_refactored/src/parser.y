@@ -62,8 +62,6 @@
 %left<op> 		'*' '/' '%' '&'
 %precedence 	UPLUS UMINUS UNOT
 
-%expect 2
-
 %union {
     int num;
     std::string* name;
