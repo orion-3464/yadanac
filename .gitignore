@@ -27,5 +27,7 @@ semantic/*.o
 semantic/parser.output
 
 semantic_refactored/build
+semantic_refactored/compile_commands.json
+semantic_refactored/.cache
 
 .vscode/
