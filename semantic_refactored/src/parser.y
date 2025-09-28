@@ -11,7 +11,7 @@
 %code {
     #include "lexer.hpp"
 	
-	SymbolTable st;
+	//SymbolTable st;
 }
 
 %locations
@@ -70,7 +70,6 @@
     std::string* str;
     std::string* op;
     char ch_cnst;
-    FparType* fpartype;
     Expr* expr;
     Stmt* stmt;
     LocalDef* localdef;
@@ -108,13 +107,13 @@
 %type<bracketlist>	bracket_int_const_list
 %type<exprlist>		expr_list
 %type<expr>     	one_id expr one_expr func_call cond
-%type<fpartype> 	fpar_type type 
+%type<datatype> 	type fpar_type 
 %type<stmt>     	stmt else_col_block proc_call
 %type<op>       	'!'
 
 %%
 
-program : func_def { std::cout << "AST: " << *$1 << std::endl; $1->sem_analyze(); delete $1; }
+program : func_def { std::cout << "AST: " << *$1 << std::endl;/* $1->sem_analyze(); */ delete $1; }
 	    ;
 
 func_def    : "def" header local_def_list block { $$ = new FuncDef($2, $3, $4); } 
@@ -173,11 +172,11 @@ func_decl   : "decl" header  { $$ = new FuncDecl($2); }
 var_def : "var" T_id id_list "is" type {$3->prepend(new Id(*$2)); $$ = new VarDef($3, $5); delete $2;}  
         ;
 
-block   : "begin" stmt stmt_list "end" {$3->prepend($2); $$ = $3;} 
-        | stmt stmt_list T_auto_end    {$2->prepend($1); $$ = $2;} 
+block   : "begin" stmt_list "end" { $$ = $2; $$->set_auto_end(false); } 
+        | stmt_list T_auto_end    { $$ = $1; $$->set_auto_end(true);} 
         ;
 
-stmt_list   : %empty 		 { $$ = new Block(); }
+stmt_list   : stmt 		 { $$ = new Block(); $$ -> append($1);}
             | stmt_list stmt { $1->append($2); $$ = $1; }
             ;
 
@@ -274,12 +273,16 @@ int main(int argc, char* argv[]) {
     extern FILE *yyin;
     extern int block_style;
     void detect_block_style(FILE *);
-     
-    FILE* f = fopen(argv[1], "r");
-    if (!f) {
-        perror("fopen");
-        exit(1);
-    }   
+    
+    FILE* f = nullptr;
+
+    if(argc >= 1) { 
+        f = fopen(argv[1], "r");
+        if (!f) {
+            perror("fopen");
+            exit(1);
+        }   
+    }
 
     yyin = f;
 

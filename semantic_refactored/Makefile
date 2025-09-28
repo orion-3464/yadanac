@@ -1,6 +1,6 @@
 # -------- C++ COMPILER SETTINGS --------
 CXX := g++
-CXXFLAGS := -std=c++17 -O2 -g -Wall -Wextra -Werror -Wpedantic
+CXXFLAGS := -std=c++17 -O2 -g -Wall -Wextra  -Wpedantic
 
 # ---------- PROJECT STRUCTURE ----------
 
@@ -30,7 +30,7 @@ $(BUILD_DIR)/parser.cpp $(BUILD_DIR)/parser.hpp: $(SRC_DIR)/parser.y | $(BUILD_D
 	bison -dv -o $(BUILD_DIR)/parser.cpp $<
 
 $(BUILD_DIR)/lexer.cpp: $(SRC_DIR)/lexer.l $(BUILD_DIR)/parser.hpp | $(BUILD_DIR)
-	flex -so $@ $<
+	cd $(BUILD_DIR) && flex -s -o lexer.cpp ../$(SRC_DIR)/lexer.l
 
 # ---- C++ SOURCE FILES COMPILATION ----
 

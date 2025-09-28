@@ -55,7 +55,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 /* LEXER OPTIONS */
 
 %option outfile="lexer.cpp"
-%option yylineno noyywrap nodefault
+%option yylineno noyywrap nodefault 
 %option pointer 
 %option bison-bridge bison-locations
 
@@ -68,7 +68,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 "as"        return T_as;
 "begin"     return T_begin;  
 "break"     return T_break;
-"byte"      { yylval->dtype = new std::string(yytext); return T_byte; } 
+"byte"      { return T_byte; } 
 "continue"  return T_cont; 
 "decl"      return T_decl; 
 "def"       { BEGIN(DRIVER); ++blocks; return T_def; } 
@@ -76,17 +76,17 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 "else"      { BEGIN(DRIVER); ++blocks; return T_else; } 
 "end"       return T_end; 
 "exit"      return T_exit; 
-"false"     { yylval->btype = new std::string(yytext); return T_false; } 
+"false"     { return T_false; } 
 "if"        { BEGIN(DRIVER); ++blocks; return T_if; } 
 "is"        return T_is; 
-"int"       { yylval->dtype = new std::string(yytext); return T_int; } 
+"int"       { return T_int; } 
 "loop"      { BEGIN(DRIVER); ++blocks; return T_loop; }
 "not"       return T_not;
 "or"        { yylval->op = new std::string(yytext); return T_or; }
 "ref"       return T_ref; 
 "return"    return T_ret; 
 "skip"      return T_skip; 
-"true"      { yylval->btype = new std::string(yytext); return T_true; } 
+"true"      { return T_true; } 
 "var"       return T_var; 
 ":="        return T_asgn; 
 ":"         return T_col; 
@@ -107,7 +107,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
     /* OFFSIDE RULE */
 ^{S}+(\n|\#|"(*") {
-                        char *input = yytext;
+                        //char *input = yytext;
 
                         for(int i=0; i < yyleng; ++i) {
                             if(yytext[i]=='(') {
@@ -127,7 +127,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                    }
 
 ^{S}+               {   
-                        char *input = yytext;
+                        //char *input = yytext;
                         int spaces = 0;
                         
                         for(int i = 0; i < yyleng; i++) 
