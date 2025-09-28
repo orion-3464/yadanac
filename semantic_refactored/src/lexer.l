@@ -242,5 +242,5 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
     /* NOTHING MATCHED */
 
-.   { printf("\033[1;31m"); fprintf(stderr, "illegal token\n"); printf("\033[0m"); exit(1); }
+.   { printf("\033[1;31m"); fprintf(stderr, "illegal token\n"); printf("\033[0m"); yyterminate(); }
 %%

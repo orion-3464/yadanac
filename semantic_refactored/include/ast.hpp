@@ -368,7 +368,7 @@ private:
 
 class BinOpCond : public Cond {
 public:
-    BinOpCond(Expr *c1, std::string o, Expr *c2);
+    BinOpCond(Expr *c1, std::string *o, Expr *c2);
 
     ~BinOpCond() override;
 
@@ -381,7 +381,7 @@ private:
 
 class UnaryOpExpr : public Expr {
 public:
-  	UnaryOpExpr(std::string o, Expr *e);
+  	UnaryOpExpr(std::string *o, Expr *e);
     ~UnaryOpExpr() override;
 
   	void printAST(std::ostream &out) const override;
@@ -392,7 +392,7 @@ private:
 
 class BinOpExpr : public Expr {
 public:
-  	BinOpExpr(Expr *e1, std::string o, Expr *e2);
+  	BinOpExpr(Expr *e1, std::string *o, Expr *e2);
     ~BinOpExpr() override;
 
   	void printAST(std::ostream &out) const override;

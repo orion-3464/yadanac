@@ -42,6 +42,12 @@
 %token		 	T_true  "true"
 %token 			T_var   "var"
 
+%token<op>      '('
+%token<op>      ')'
+%token<op>      '['
+%token<op>      ']'
+%token<op>      ','
+
 %token T_asgn   ":="
 %token T_col    ":"
 %token T_geq    ">="
@@ -61,6 +67,8 @@
 %left<op> 		'+' '-' '|' 
 %left<op> 		'*' '/' '%' '&'
 %precedence 	UPLUS UMINUS UNOT
+
+%expect 2
 
 %union {
     int num;
@@ -133,7 +141,7 @@ col_fpar_def    : %empty 					 { $$ = nullptr; }
                 ;
 
 fpar_def_list   : %empty 					 { $$ = new FparDefList(); }
-                | fpar_def_list ',' fpar_def { $1->append($3); $$ = $1; }
+                | fpar_def_list ',' fpar_def { $1->append($3); $$ = $1; delete $2; }
                 ;
 
 fpar_def    : T_id id_list "as" fpar_type { $2->prepend(new Id(*$1)); $$ = new FparDef($2, $4); delete $1;}
@@ -149,11 +157,11 @@ data_type   : "int"  { $$ = new DataType(TYPE_INT); }
 
 fpar_type   : type					        			{ $$ = $1; }
             | "ref" data_type							{ $$ = new RefPar($2); }
-            | data_type '[' ']' bracket_int_const_list  { $$ = new ArrayPar($1, $4); } 
+            | data_type '[' ']' bracket_int_const_list  { $$ = new ArrayPar($1, $4); delete $2; delete $3;} 
             ;
 
 bracket_int_const_list  : %empty 								 { $$ = new BracketList(); }
-                        | bracket_int_const_list '[' T_const ']' { $1->append(new Const($3)); $$ = $1; }
+                        | bracket_int_const_list '[' T_const ']' { $1->append(new Const($3)); $$ = $1; delete $2; delete $4; }
                         ;
 
 local_def   : func_def  { $$ = $1; } 
@@ -207,26 +215,26 @@ col_id  : %empty	{ $$ = nullptr; }
 
 l_value : T_id                  { $$ = new LValue(new Id(*$1)); delete $1; } 
         | T_str                 { $$ = new LValue(new Str(*$1)); delete $1; }
-        | l_value '[' expr ']'  { $1->append($3); $$ = $1; }
+        | l_value '[' expr ']'  { $1->append($3); $$ = $1; delete $2; delete $4; }
         ;
 
 expr    : T_const   				{ $$ = new Const($1); }
         | T_char    				{ $$ = new Char($1); }
         | l_value   				{ $$ = $1; }
-        | '(' expr ')' 				{ $$ = $2; }
+        | '(' expr ')' 				{ $$ = $2; delete $1; delete $3;}
         | func_call    				{ $$ = $1; }
-        | '+' expr %prec UPLUS 		{ $$ = new UnaryOpExpr(*$1, $2); delete $1; }
-        | '-' expr %prec UMINUS		{ $$ = new UnaryOpExpr(*$1, $2); delete $1; }
-        | expr '+' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
-        | expr '-' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
-        | expr '*' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
-        | expr '/' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
-        | expr '%' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
+        | '+' expr %prec UPLUS 		{ $$ = new UnaryOpExpr($1, $2);  }
+        | '-' expr %prec UMINUS		{ $$ = new UnaryOpExpr($1, $2);  }
+        | expr '+' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
+        | expr '-' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
+        | expr '*' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
+        | expr '/' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
+        | expr '%' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
         | "true"  					{ $$ = new BoolVal(true);} 
         | "false" 					{ $$ = new BoolVal(false);}
-        | '!' expr %prec UNOT		{ $$ = new UnaryOpExpr(*$1, $2); delete $1; }
-        | expr '&' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
-        | expr '|' expr 			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
+        | '!' expr %prec UNOT		{ $$ = new UnaryOpExpr($1, $2);  }
+        | expr '&' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
+        | expr '|' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
         ;
 
 proc_call   : T_id one_col_expr { $$ = new ProcCall(new Id(*$1), $2); delete $1; } 
@@ -237,10 +245,10 @@ one_col_expr    : %empty 			 { $$ = nullptr; }
                 ;
 
 expr_list   : %empty 			 { $$ = new ExprList(); }
-            | expr_list ',' expr { $1->append($3); $$ = $1; }
+            | expr_list ',' expr { $1->append($3); $$ = $1; delete $2; }
             ; 
 
-func_call   : T_id '(' one_expr ')' { $$ = new FuncCall(new Id(*$1), $3); delete $1; } 
+func_call   : T_id '(' one_expr ')' { $$ = new FuncCall(new Id(*$1), $3); delete $1; delete $2; delete $4;} 
             ;
 
 one_expr    : %empty 		 { $$ = nullptr; } 
@@ -248,23 +256,23 @@ one_expr    : %empty 		 { $$ = nullptr; }
             ;
 
 cond    : expr						{ $$ = $1; }
-        | '(' cond ')'				{ $$ = $2; }
+        | '(' cond ')'				{ $$ = $2; delete $1; delete $3;}
         | "not" cond %prec UNOTNOT	{ $$ = new NotCond($2); }
-        | cond "and" cond			{ $$ = new BinOpCond($1, *$2, $3); delete $2; }
-        | cond "or" cond			{ $$ = new BinOpCond($1, *$2, $3); delete $2; }
-        | expr '=' expr				{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
-        | expr "<>" expr			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
-        | expr '<' expr				{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
-        | expr '>' expr				{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
-        | expr "<=" expr			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
-        | expr ">=" expr			{ $$ = new BinOpExpr($1, *$2, $3); delete $2; }
+        | cond "and" cond			{ $$ = new BinOpCond($1, $2, $3); delete $2; }
+        | cond "or" cond			{ $$ = new BinOpCond($1, $2, $3); delete $2; }
+        | expr '=' expr				{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr "<>" expr			{ $$ = new BinOpExpr($1, $2, $3); delete $2; }
+        | expr '<' expr				{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr '>' expr				{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr "<=" expr			{ $$ = new BinOpExpr($1, $2, $3); delete $2; }
+        | expr ">=" expr			{ $$ = new BinOpExpr($1, $2, $3); delete $2; }
         ;
 
 %%
 
 void yyerror(YYLTYPE *locp, const char *msg) {
 	printf("Syntax error: %s\n at line %d\n", msg, locp->last_line);
-	exit(42);
+	//exit(42);
 }
 
 int main(int argc, char* argv[]) {
@@ -292,6 +300,7 @@ int main(int argc, char* argv[]) {
        "\033[0m");
 
 	int res = yyparse();
+
     switch(res) {
         case 0:
             printf("\033[1;32m Successful parsing\n \033[0m");
@@ -306,5 +315,6 @@ int main(int argc, char* argv[]) {
             break;
     }
 
+    fclose(f);
 	return res;
 }

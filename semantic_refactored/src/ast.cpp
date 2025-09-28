@@ -471,7 +471,7 @@ void NotCond::printAST(std::ostream &out) const {
 
 // --------- BINOP CLASS ---------
 
-BinOpCond::BinOpCond(Expr *c1, std::string o, Expr *c2) : cond1(c1), op(o), cond2(c2) {}
+BinOpCond::BinOpCond(Expr *c1, std::string *o, Expr *c2) : cond1(c1), op(*o), cond2(c2) { delete o; }
 
 BinOpCond::~BinOpCond() {
     if(cond1) delete cond1;
@@ -484,7 +484,7 @@ void BinOpCond::printAST(std::ostream &out) const {
 
 // --------- UNARYOP CLASS ---------
 
-UnaryOpExpr::UnaryOpExpr(std::string o, Expr *e) : op(o), expr(e) {}
+UnaryOpExpr::UnaryOpExpr(std::string *o, Expr *e) : op(*o), expr(e) { delete o; }
 
 UnaryOpExpr::~UnaryOpExpr() {
     if(expr) delete expr;
@@ -496,7 +496,7 @@ void UnaryOpExpr::printAST(std::ostream &out) const {
 
 // --------- BINOP_EXPR CLASS ---------
 
-BinOpExpr::BinOpExpr(Expr *e1, std::string o, Expr *e2) : expr1(e1), op(o), expr2(e2) {}
+BinOpExpr::BinOpExpr(Expr *e1, std::string *o, Expr *e2) : expr1(e1), op(*o), expr2(e2) { delete o; }
 
 BinOpExpr::~BinOpExpr() {
     if(expr1) delete expr1;
