@@ -1,4 +1,16 @@
 #include "ast.hpp"
+#include "lexer.hpp"
+
+// -------- BLOCK CLASS --------
+
+void Expr::check_type(ExprType expected_type1, ExprType expected_type2) {
+    sem_analyze();
+    if(expr_type != expected_type1 || expr_type != expected_type2) printf("ERRORRRRR"); // yyerror("type_mismatch"); TO DO
+}
+
+ExprType Expr::get_type() {
+    return expr_type;
+}
 
 // -------- BLOCK CLASS --------
 
@@ -63,11 +75,9 @@ void Const::printAST(std::ostream &out) const {
     out << "Const(" << num << ")";
 }
 
-/*
-void sem_analyze() override {
-    type = TYPE_INT;
+void Const::sem_analyze() {
+    expr_type = TYPE_INT;
 }
-*/
 
 // ------- BRACKET LIST CLASS -------
 
@@ -319,12 +329,20 @@ void Char::printAST(std::ostream &out) const {
     out << "Char(" << ch << ")";
 }
 
+void Char::sem_analyze() {
+    expr_type = TYPE_BYTE;
+}
+
 // ---------- STR CLASS ----------
 
 Str::Str(std::string s) : val(s) {}
 
 void Str::printAST(std::ostream &out) const {
     out << "Str(" << val << ")";
+}
+
+void Str::sem_analyze() {
+    expr_type = TYPE_BYTE_ARRAY;
 }
 
 // --------- LVALUE CLASS ---------
@@ -450,6 +468,11 @@ void FuncCall::printAST(std::ostream &out) const  {
     (expr) ? out << *expr  << ")" : out << "NO_ARGS)";
 }
 
+void FuncCall::sem_analyze() {
+    //check_scope gia name
+    //num of parameters are same of the func
+}
+
 // --------- NOT_COND CLASS ---------
 
 NotCond::NotCond(Expr *c) : cond(c) {}
@@ -460,6 +483,11 @@ NotCond::~NotCond() {
 
 void NotCond::printAST(std::ostream &out) const {
     out << "NotCond(" << "not " << *cond  << ")";
+}
+
+void NotCond::sem_analyze() {
+    cond -> check_type(TYPE_BOOL, TYPE_BOOL);
+    expr_type = TYPE_BOOL;
 }
 
 // --------- BINOP CLASS ---------
@@ -475,6 +503,13 @@ void BinOpCond::printAST(std::ostream &out) const {
     out << op << "(" << *cond1 << ", " << *cond2  << ")";
 }
 
+void BinOpCond::sem_analyze() {
+    cond1 -> check_type(TYPE_BOOL, TYPE_BOOL);
+    cond2 -> check_type(TYPE_BOOL, TYPE_BOOL);
+
+    expr_type = TYPE_BOOL;
+}
+
 // --------- UNARYOP CLASS ---------
 
 UnaryOpExpr::UnaryOpExpr(std::string *o, Expr *e) : op(*o), expr(e) { delete o; }
@@ -485,6 +520,17 @@ UnaryOpExpr::~UnaryOpExpr() {
 
 void UnaryOpExpr::printAST(std::ostream &out) const {
     out << op << "(" << *expr << ")";
+}
+
+void UnaryOpExpr::sem_analyze() {
+    if(op == "!") {
+        expr -> check_type(TYPE_BYTE, TYPE_BYTE);
+        expr_type = TYPE_BYTE;
+    }
+    else {
+        expr -> check_type(TYPE_INT, TYPE_INT);
+        expr_type = TYPE_INT;
+    }
 }
 
 // --------- BINOP_EXPR CLASS ---------
@@ -500,12 +546,28 @@ void BinOpExpr::printAST(std::ostream &out) const {
     out << op << "(" << *expr1 << ", " << *expr2 << ")";
 }
 
+void BinOpExpr::sem_analyze() {
+    expr1 -> check_type(TYPE_INT, TYPE_BYTE);
+    expr2 -> check_type(TYPE_INT, TYPE_BYTE);
+
+    ExprType expr1_type = expr1 -> get_type();
+    ExprType expr2_type = expr2 -> get_type();
+    if( expr1_type != expr2_type ) printf("INCOMPATIBLE TYPES"); // RAISE ERROR
+
+    if(op == "+" || op == "-" || op == "/" || op == "*" || op == "%" || op == "&" || op == "|") expr_type = expr1_type;
+    else expr_type = TYPE_BOOL;
+}
+
 // --------- BOOL_VAL CLASS ---------
 
 BoolVal::BoolVal(char bv) : boolval(bv) {}
 
 void BoolVal::printAST(std::ostream &out) const {
     out << "BoolVal" << "("<< (boolval ? "true" : "false")  << ")";
+}
+
+void BoolVal::sem_analyze() {
+    expr_type = TYPE_BOOL;
 }
 
 // --------- SKIP CLASS ---------
@@ -597,16 +659,17 @@ IfThenElse::~IfThenElse() {
 }
 
 void IfThenElse::printAST(std::ostream &out) const {
-    out << "IfThenElse(" << *cond << ", "<< *block << ", " << *elif << ", ";
+    out << "IfThenElse(" << *cond << ", "<< *block << ", ";
+    (elif) ? out << *elif << ", " : out << "no-elif, ";
     (els) ? out << *els  << ")" : out << "no-else)";
 }
 
-// void IfThenElse::sem_analyze() override {
-// 	cond->check_type(TYPE_BOOL);
-// 	block->sem_analyze();
-// 	elif->sem_analyze(); //check in elif_list if it is nullptr
-// 	if (els != nullptr) els->sem_analyze();
-// }
+void IfThenElse::sem_analyze() {
+	cond->check_type(TYPE_BOOL, TYPE_BOOL);
+	block->sem_analyze();
+	if(elif) elif->sem_analyze();
+	if(els) els->sem_analyze();
+}
 
 // --------- ELIF CLASS ---------
 
@@ -620,6 +683,11 @@ Elif::~Elif() {
 
 void Elif::printAST(std::ostream &out) const {
     out << "Elif(" << *cond << " : "  << *block  << ")";
+}
+
+void Elif::sem_analyze() {
+	cond->check_type(TYPE_BOOL, TYPE_BOOL);
+	block->sem_analyze();
 }
 
 // --------- ELIF_LIST CLASS ---------
@@ -645,6 +713,12 @@ void ElifList::printAST(std::ostream &out) const {
     out << ")";
 }
 
+void ElifList::sem_analyze() {
+    for(const auto &e : elif_list) {
+        e->sem_analyze();
+    }
+}
+
 // --------- ELSE CLASS ---------
 
 Else::Else(Block *b) : block(b) {}
@@ -655,6 +729,10 @@ Else::~Else() {
 
 void Else::printAST(std::ostream &out) const {
     out << "Else(" << *block  << ")";
+}
+
+void Else::sem_analyze() {
+	block->sem_analyze();
 }
 
 // --------- LOOP CLASS ---------
@@ -672,9 +750,9 @@ void Loop::printAST(std::ostream &out) const {
     out <<  *block  << ")";
 }
 
-// void Loop::sem_analyze() override {
-// 	st.enterScope();
-// 	if(name) st.insert(name, "loop"); //loop is a kind type (enum)
-// 	else st.insert("", "loop")
-// 	block->sem_analyze();
-// }
+void Loop::sem_analyze() {
+	// st.enterScope();
+	// if(name) st.insert(name, "loop"); //loop is a kind type (enum)
+	// else st.insert("", "loop")
+	block->sem_analyze();
+}

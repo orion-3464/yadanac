@@ -6,13 +6,18 @@
 #include <iostream>
 #include "symbol.hpp"
 
+enum BaseType {
+    INT,
+    BYTE
+};
+
 class AST {
 	public:
     AST() = default;
     virtual ~AST() = default;
 
 	virtual void printAST(std::ostream &out) const = 0;
-    //virtual void sem_analyze() = 0;
+    virtual void sem_analyze() = 0;
 };
 	
 // -------- OUT OPERATORS --------
@@ -24,25 +29,24 @@ inline std::ostream &operator<<(std::ostream &out, const AST &ast) {
 
 inline std::ostream &operator<<(std::ostream &out, BaseType t) {
   switch (t) {
-    case TYPE_INT: out << "int"; break;
+    case INT: out << "int"; break;
 
-    case TYPE_BYTE: out << "byte"; break;
-
-    case TYPE_BOOL: break; // TO DO
-
-    case TYPE_ARRAY: break; // TO DO
+    case BYTE: out << "byte"; break;
 
     default: break;
 
   }
   return out;
 }
-
 class Expr : public AST {
 public:
     Expr() = default;
     virtual ~Expr() = default;
-    // void check_type();
+
+    ExprType get_type();
+    void check_type(ExprType expected_type1, ExprType expected_type2);
+protected:
+    ExprType expr_type;
 };
 
 class Stmt : public AST {
@@ -63,6 +67,11 @@ protected:
 
 class LocalDef : public AST {
 };
+
+
+class Cond : public Expr {
+};
+
 
 class Block : public Stmt {     // Blocks are statement lists
 public:
@@ -86,11 +95,11 @@ public:
     Const(int n);
 
     void printAST(std::ostream &out) const override;
-	//void sem_analyze() override;
+	void sem_analyze() override;
 private:
     int num;
-	//BaseType type;
 };
+
 class BracketList : public Const {      // Bracket lists are const lists
 public:
     BracketList();
@@ -234,6 +243,7 @@ public:
     Char(char c);
 
 	void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     char ch;
 };
@@ -243,6 +253,7 @@ public:
     Str(std::string s);
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     std::string val;
 };
@@ -342,12 +353,10 @@ public:
     ~FuncCall() override;
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     Expr *name;
     Expr *expr;
-};
-
-class Cond : public Expr {
 };
 
 class NotCond : public Cond {
@@ -356,6 +365,7 @@ public:
     ~NotCond() override;
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     Expr *cond;
 };
@@ -363,10 +373,10 @@ private:
 class BinOpCond : public Cond {
 public:
     BinOpCond(Expr *c1, std::string *o, Expr *c2);
-
     ~BinOpCond() override;
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     Expr *cond1;
 	std::string op;
@@ -379,6 +389,7 @@ public:
     ~UnaryOpExpr() override;
 
   	void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     std::string op;
   	Expr *expr;
@@ -390,6 +401,7 @@ public:
     ~BinOpExpr() override;
 
   	void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
   	Expr *expr1;
   	std::string op;
@@ -401,6 +413,7 @@ public:
     BoolVal(char bv);
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     char boolval;
 };
@@ -469,8 +482,7 @@ public:
     ~IfThenElse() override;
 
     void printAST(std::ostream &out) const override;
-
-	// void sem_analyze() override;
+	void sem_analyze() override;
 private:
     Expr *cond;
     Block *block;
@@ -485,6 +497,7 @@ public:
     ~Elif() override;
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     Expr *cond;
 	Block *block;
@@ -497,6 +510,7 @@ public:
 
     void append(Stmt *e);
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     std::vector<Stmt *> elif_list;
 };
@@ -507,6 +521,7 @@ public:
     ~Else() override;
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     Block *block;
 };
@@ -517,8 +532,7 @@ public:
     ~Loop() override;
 
     void printAST(std::ostream &out) const override;
-
-	// void sem_analyze() override;
+	void sem_analyze() override;
 private:
     Expr *name;
     Block *block;

@@ -224,8 +224,8 @@ expr    : T_const   				{ $$ = new Const($1); }
         | expr '*' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
         | expr '/' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
         | expr '%' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
-        | "true"  					{ $$ = new BoolVal(true);} 
-        | "false" 					{ $$ = new BoolVal(false);}
+        | "true"  					{ $$ = new BoolVal('\x01'); } 
+        | "false" 					{ $$ = new BoolVal('\0'); }
         | '!' expr %prec UNOT		{ $$ = new UnaryOpExpr($1, $2); }
         | expr '&' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
         | expr '|' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
@@ -254,10 +254,10 @@ cond    : expr						{ $$ = $1; }
         | "not" cond %prec UNOTNOT	{ $$ = new NotCond($2); }
         | cond "and" cond			{ $$ = new BinOpCond($1, $2, $3); delete $2; }
         | cond "or" cond			{ $$ = new BinOpCond($1, $2, $3); delete $2; }
-        | expr '=' expr				{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr '=' expr				{ $$ = new BinOpExpr($1, $2, $3); delete $2; } // may fix the leak     
         | expr "<>" expr			{ $$ = new BinOpExpr($1, $2, $3); delete $2; }
-        | expr '<' expr				{ $$ = new BinOpExpr($1, $2, $3); }
-        | expr '>' expr				{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr '<' expr				{ $$ = new BinOpExpr($1, $2, $3); delete $2; } // may fix the leak
+        | expr '>' expr				{ $$ = new BinOpExpr($1, $2, $3); delete $2; } // may fix the leak
         | expr "<=" expr			{ $$ = new BinOpExpr($1, $2, $3); delete $2; }
         | expr ">=" expr			{ $$ = new BinOpExpr($1, $2, $3); delete $2; }
         ;
