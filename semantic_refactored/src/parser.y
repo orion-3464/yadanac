@@ -42,12 +42,6 @@
 %token		 	T_true  "true"
 %token 			T_var   "var"
 
-%token<op>      '('
-%token<op>      ')'
-%token<op>      '['
-%token<op>      ']'
-%token<op>      ','
-
 %token T_asgn   ":="
 %token T_col    ":"
 %token T_geq    ">="
@@ -137,11 +131,11 @@ is_data_type    : %empty 		 { $$ = nullptr; } //nothing cause it's non recursive
                 ;
 
 col_fpar_def    : %empty 					 { $$ = nullptr; } 
-                | ":" fpar_def fpar_def_list { $3->append($2); $$ = new ColFparDef($3); } 
+                | ":" fpar_def fpar_def_list { $3->prepend($2); $$ = new ColFparDef($3); } 
                 ;
 
 fpar_def_list   : %empty 					 { $$ = new FparDefList(); }
-                | fpar_def_list ',' fpar_def { $1->append($3); $$ = $1; delete $2; }
+                | fpar_def_list ',' fpar_def { $1->append($3); $$ = $1; }
                 ;
 
 fpar_def    : T_id id_list "as" fpar_type { $2->prepend(new Id(*$1)); $$ = new FparDef($2, $4); delete $1;}
@@ -157,11 +151,11 @@ data_type   : "int"  { $$ = new DataType(TYPE_INT); }
 
 fpar_type   : type					        			{ $$ = $1; }
             | "ref" data_type							{ $$ = new RefPar($2); }
-            | data_type '[' ']' bracket_int_const_list  { $$ = new ArrayPar($1, $4); delete $2; delete $3;} 
+            | data_type '[' ']' bracket_int_const_list  { $$ = new ArrayPar($1, $4); } 
             ;
 
 bracket_int_const_list  : %empty 								 { $$ = new BracketList(); }
-                        | bracket_int_const_list '[' T_const ']' { $1->append(new Const($3)); $$ = $1; delete $2; delete $4; }
+                        | bracket_int_const_list '[' T_const ']' { $1->append(new Const($3)); $$ = $1; }
                         ;
 
 local_def   : func_def  { $$ = $1; } 
@@ -215,26 +209,26 @@ col_id  : %empty	{ $$ = nullptr; }
 
 l_value : T_id                  { $$ = new LValue(new Id(*$1)); delete $1; } 
         | T_str                 { $$ = new LValue(new Str(*$1)); delete $1; }
-        | l_value '[' expr ']'  { $1->append($3); $$ = $1; delete $2; delete $4; }
+        | l_value '[' expr ']'  { $1->append($3); $$ = $1; }
         ;
 
 expr    : T_const   				{ $$ = new Const($1); }
         | T_char    				{ $$ = new Char($1); }
         | l_value   				{ $$ = $1; }
-        | '(' expr ')' 				{ $$ = $2; delete $1; delete $3;}
+        | '(' expr ')' 				{ $$ = $2; }
         | func_call    				{ $$ = $1; }
         | '+' expr %prec UPLUS 		{ $$ = new UnaryOpExpr($1, $2);  }
         | '-' expr %prec UMINUS		{ $$ = new UnaryOpExpr($1, $2);  }
-        | expr '+' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
-        | expr '-' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
-        | expr '*' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
-        | expr '/' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
-        | expr '%' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
+        | expr '+' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr '-' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr '*' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr '/' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr '%' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
         | "true"  					{ $$ = new BoolVal(true);} 
         | "false" 					{ $$ = new BoolVal(false);}
-        | '!' expr %prec UNOT		{ $$ = new UnaryOpExpr($1, $2);  }
-        | expr '&' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
-        | expr '|' expr 			{ $$ = new BinOpExpr($1, $2, $3);  }
+        | '!' expr %prec UNOT		{ $$ = new UnaryOpExpr($1, $2); }
+        | expr '&' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr '|' expr 			{ $$ = new BinOpExpr($1, $2, $3); }
         ;
 
 proc_call   : T_id one_col_expr { $$ = new ProcCall(new Id(*$1), $2); delete $1; } 
@@ -245,10 +239,10 @@ one_col_expr    : %empty 			 { $$ = nullptr; }
                 ;
 
 expr_list   : %empty 			 { $$ = new ExprList(); }
-            | expr_list ',' expr { $1->append($3); $$ = $1; delete $2; }
+            | expr_list ',' expr { $1->append($3); $$ = $1; }
             ; 
 
-func_call   : T_id '(' one_expr ')' { $$ = new FuncCall(new Id(*$1), $3); delete $1; delete $2; delete $4;} 
+func_call   : T_id '(' one_expr ')' { $$ = new FuncCall(new Id(*$1), $3); delete $1; } 
             ;
 
 one_expr    : %empty 		 { $$ = nullptr; } 
@@ -256,7 +250,7 @@ one_expr    : %empty 		 { $$ = nullptr; }
             ;
 
 cond    : expr						{ $$ = $1; }
-        | '(' cond ')'				{ $$ = $2; delete $1; delete $3;}
+        | '(' cond ')'				{ $$ = $2; }
         | "not" cond %prec UNOTNOT	{ $$ = new NotCond($2); }
         | cond "and" cond			{ $$ = new BinOpCond($1, $2, $3); delete $2; }
         | cond "or" cond			{ $$ = new BinOpCond($1, $2, $3); delete $2; }

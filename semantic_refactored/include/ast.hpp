@@ -51,6 +51,19 @@ public:
     virtual ~Stmt() = default;
 };
 
+class DataType : public AST {
+public:
+    DataType(BaseType t);
+    DataType(const DataType& other);  
+
+    void printAST(std::ostream &out) const override;
+protected:
+    BaseType type;
+};
+
+class LocalDef : public AST {
+};
+
 class Block : public Stmt {     // Blocks are statement lists
 public:
     Block();
@@ -67,16 +80,6 @@ private:
     bool has_auto_end;
 };
 
-class DataType : public AST {
-public:
-    DataType(BaseType t);
-
-    BaseType get_type() const;
-
-    void printAST(std::ostream &out) const override;
-private:
-    BaseType type;
-};
 class Const : public Expr {
 public:
     Const();
@@ -160,19 +163,8 @@ public:
     void printAST(std::ostream &out) const override;
 	// void sem_analyze() override;
 private:
-    Expr *name;
+    Expr *name_list;
     DataType *type;
-};
-
-class ColFparDef : public AST { 
-public:
-    ColFparDef(FparDef *f);
-    ~ColFparDef() override;
-	
-    void printAST(std::ostream &out) const override;
-	// void sem_analyze() override;
-private:
-    FparDef *def;
 };
 
 class FparDefList : public FparDef {
@@ -185,19 +177,24 @@ public:
     bool empty() const;
 
     void printAST(std::ostream &out) const override;
-private:
+protected:
     std::vector<FparDef *> def_list;
 };
+class ColFparDef : public FparDefList { 
+public:
+    ColFparDef(FparDef *f);
+	
+    void printAST(std::ostream &out) const override;
+	// void sem_analyze() override;
+};
 
-class IsDataType : public AST {
+class IsDataType : public DataType {
 public:
     IsDataType(DataType *t);
-    ~IsDataType() override;
 
     void printAST(std::ostream &out) const override;
-private:
-    DataType *type;
 };
+
 class Header : public AST {
 public:
     Header(Expr *s, IsDataType *d, ColFparDef *c);
@@ -211,7 +208,7 @@ private:
     ColFparDef *col_def;
 };
 
-class ColId : public AST {
+class ColId : public Id {
 public:
     ColId(Expr *i);
     ~ColId() override;
@@ -278,9 +275,6 @@ public:
 	// void sem_analyze() override;
 private:
     std::vector<Expr *> list;
-};
-
-class LocalDef : public AST {
 };
 
 class LocalDefList : public LocalDef {

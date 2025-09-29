@@ -94,7 +94,9 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 ">="        { yylval->op = new std::string(yytext); return T_geq; }
 "<>"        { yylval->op = new std::string(yytext); return T_neq; } 
 	
-[\+\-\*\/\%\!\&\|\=\<\>\(\)\[\]\,]  { yylval->op = new std::string(yytext); return yytext[0]; }
+[\+\-\*\/\%\!\&\|\=\<\>]  { yylval->op = new std::string(yytext); return yytext[0]; }
+
+[\(\)\[\]\,]              { return yytext[0]; }
 
 {L}({L}|{D}|_)*     { yylval->name = new std::string(yytext); return T_id; }
 {D}+                { yylval->num = atoi(yytext); return T_const; } 

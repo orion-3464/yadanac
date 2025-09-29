@@ -48,8 +48,7 @@ void Block::sem_analyze() override {
 // -------- DATA TYPE CLASS --------
 
 DataType::DataType(BaseType t) : type(t) {}
-
-BaseType DataType::get_type() const { return type; }
+DataType::DataType(const DataType& other) : type(other.type) {}
 
 void DataType::printAST(std::ostream &out) const {
     out << "DataType(" << type << ")";
@@ -95,36 +94,36 @@ void BracketList::printAST(std::ostream &out) const {
 
 // --------- TYPE CLASS ---------
 
-Type::Type(DataType *t, Expr *c) : DataType(t->get_type()), bracket_list(c) { delete t; }
+Type::Type(DataType *t, Expr *c) : DataType(*t), bracket_list(c) { delete t; }
     
 Type::~Type() {
     if(bracket_list) delete bracket_list;
 }
 
 void Type::printAST(std::ostream &out) const {
-    out << "Type(" << get_type() << ", " << *bracket_list  << ")";
+    out << "Type(" << type << ", " << *bracket_list  << ")";
 }
 
 // -------- ARRAY PAR CLASS --------
 
-ArrayPar::ArrayPar(DataType *t, Expr *c) : DataType(t->get_type()), const_list(c) { delete t; }
+ArrayPar::ArrayPar(DataType *t, Expr *c) : DataType(*t), const_list(c) { delete t; }
 
 ArrayPar::~ArrayPar() {
         if(const_list) delete const_list;
     }
 
 void ArrayPar::printAST(std::ostream &out) const {
-    out << "ArrayPar(" << get_type() << "[]"  << *const_list  << ")";
+    out << "ArrayPar(" << type << "[]"  << *const_list  << ")";
 }
 
 // -------- REF PAR CLASS --------
 
-RefPar::RefPar(DataType *t) : DataType(t->get_type()) {}
+RefPar::RefPar(DataType *t) : DataType(*t) {}
  
 RefPar::~RefPar() {}
 
 void RefPar::printAST(std::ostream &out) const {
-    out << "RefPar(" << "ref" << get_type()  << ")";
+    out << "RefPar(" << "ref" << type  << ")";
 }
 
 // ------------- ID CLASS --------------
@@ -162,16 +161,16 @@ void IdList::printAST(std::ostream &out) const {
 
 // -------- FPARDEF CLASS --------
 
-FparDef::FparDef() : name(nullptr), type(nullptr) {} 
-FparDef::FparDef(Expr *i, DataType *t) : name(i), type(t) {}
+FparDef::FparDef() : name_list(nullptr), type(nullptr) {} 
+FparDef::FparDef(Expr *i, DataType *t) : name_list(i), type(t) {}
 
 FparDef::~FparDef() {
-    if(name) delete name;
+    if(name_list) delete name_list;
     if(type) delete type;
 }
 
 void FparDef::printAST(std::ostream &out) const {
-    out << "FparDef(" << *name  << " as " << *type << ")";
+    out << "FparDef(" << *name_list  << " as " << *type << ")";
 }
 
 // void FparDef::sem_analyze() override{
@@ -180,14 +179,12 @@ void FparDef::printAST(std::ostream &out) const {
 
 // -------- COLFPARDEF CLASS --------
 
-ColFparDef::ColFparDef(FparDef *f) : def(f) {}
-
-ColFparDef::~ColFparDef() {
-    if(def) delete def;
-}
+ColFparDef::ColFparDef(FparDef *f) { def_list = {f}; }
 	
 void ColFparDef::printAST(std::ostream &out) const {
-    out << "ColFparDef(" << " : "  << *def << ")";
+    out << "ColFparDef(" << " : ";
+    FparDefList::printAST(out);
+    out << ")";
 }
 
 // void ColFparDef::sem_analyze() override {
@@ -247,11 +244,7 @@ void Header::printAST(std::ostream &out) const {
 
 // --------- IS DATA_TYPE CLASS ---------
 
-IsDataType::IsDataType(DataType *t) : type(t) {}
-
-IsDataType::~IsDataType() {
-    delete type;
-}
+IsDataType::IsDataType(DataType *t) : DataType(*t) {}
 
 void IsDataType::printAST(std::ostream &out) const {
     out << "IsDataType(" << " is " << type << ")";
