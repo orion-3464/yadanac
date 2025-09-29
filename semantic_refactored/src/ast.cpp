@@ -102,6 +102,12 @@ void BracketList::printAST(std::ostream &out) const {
     out << ")";
 }
 
+void BracketList::sem_analyze() {
+    for(const auto &b: b_list) {
+        b -> sem_analyze();
+    }
+}
+
 // --------- TYPE CLASS ---------
 
 Type::Type(DataType *t, Expr *c) : DataType(*t), bracket_list(c) { delete t; }
@@ -576,6 +582,10 @@ Skip::Skip() {}
 
 void Skip::printAST(std::ostream &out) const {
     out << "Skip(" <<  ")";
+}
+
+void Skip::sem_analyze() {
+    return;
 }
 
 // --------- ASSIGN CLASS ---------

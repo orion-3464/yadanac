@@ -107,6 +107,7 @@ public:
 
     void append(Expr *c);
     void printAST(std::ostream &out) const override ;
+    void sem_analyze() override;
 private:
     std::vector<Expr *> b_list;
 };
@@ -423,6 +424,7 @@ public:
     Skip();
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 };
 
 class Assign : public Stmt {

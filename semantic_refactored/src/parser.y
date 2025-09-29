@@ -6,12 +6,12 @@
 %code requires {
     #include <string>
     #include "ast.hpp"
+    #include "lexer.hpp"
+    #include "symbol.hpp"
 }
 
 %code {
-    #include "lexer.hpp"
-	
-	//SymbolTable st;
+	SymbolTable st;
 }
 
 %locations
