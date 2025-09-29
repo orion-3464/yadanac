@@ -3,7 +3,10 @@ digraph AST {
 
     stmt [label = "Stmt", shape = box, weight = 8, style = filled, color = ".6 1.0 .8"];
     expr [label = "Expr", shape = box, weight = 8, style = filled, color = "1.0 .4 .4"];
-    decl [label = "Decl", shape = box, weight = 8, style = filled, color = ".4 1.0 1.0"];
+    data_type [label = "DataType", shape = box, weight = 8, style = filled, color = ".2 .6 .5"]; 
+    local_def [label = "LocalDef", shape = box, weight = 8, style = filled, color = ".8 .6 .4"];
+
+    cond [label = cond, weight = 8, style = filled, color = ".6 1.0 .9"];
 
     func_def;
     
@@ -12,7 +15,6 @@ digraph AST {
     block;
 
     id;
-    data_type;
     fpar_def;
 
     fpar_type;
@@ -20,28 +22,23 @@ digraph AST {
     type;
     int_const;
 
-    local_def;
     func_decl;
     var_def;
 
-    stmt;
     l_value;
-    expr;
     proc_call;
-    cond;
-
+    
     string_literal;
-    char_const;
 
-    AST -> func_def;
+    ast -> { stmt, expr, data_type, local_def };
+
+    expr -> { cond };
 
     func_def -> { header, local_def, block };
 
     header -> { id, data_type, fpar_def };
 
     fpar_def -> { id, fpar_type };
-
-    // data_type -> int|byte
 
     type -> { data_type, int_const };
 
@@ -53,17 +50,11 @@ digraph AST {
 
     var_def -> { id, type };
 
-    stmt -> { l_value, expr, proc_call, block, cond, id };
+    stmt -> { l_value, proc_call, block, cond, id };
 
-    block -> { stmt };
+    proc_call -> { id };
 
-    proc_call -> { id, expr };
+    func_call -> { id };
 
-    func_call -> { id, expr };
-
-    l_value -> { id, string_literal, l_value, expr };
-
-    expr -> { int_const, char_const, l_value, expr, func_call  };
-
-    cond -> { expr, cond };
+    l_value -> { id, string_literal, l_value };
 }
