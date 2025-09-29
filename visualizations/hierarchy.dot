@@ -1,5 +1,10 @@
 digraph AST {
-    program;
+    ast [label = "AST", shape = box, weight = 8, style = filled, color = ".6 .3 1.0"];
+
+    stmt [label = "Stmt", shape = box, weight = 8, style = filled, color = ".6 1.0 .8"];
+    expr [label = "Expr", shape = box, weight = 8, style = filled, color = "1.0 .4 .4"];
+    decl [label = "Decl", shape = box, weight = 8, style = filled, color = ".4 1.0 1.0"];
+
     func_def;
     
     header;
@@ -28,7 +33,7 @@ digraph AST {
     string_literal;
     char_const;
 
-    program -> func_def;
+    AST -> func_def;
 
     func_def -> { header, local_def, block };
 
