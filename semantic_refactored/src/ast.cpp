@@ -150,6 +150,10 @@ void RefPar::printAST(std::ostream &out) const {
 Id::Id() {}
 Id::Id(std::string s) : name(s) {}
 
+std::string Id::get_name() {
+    return name;
+}
+
 void Id::printAST(std::ostream &out) const {
     out << "Id(" << name << ")";
 }
@@ -271,21 +275,25 @@ void IsDataType::printAST(std::ostream &out) const {
 
 // --------- COLID CLASS ---------
 
-ColId::ColId(Expr *i) : name(i) {}
+Label::Label(Id *i) : name(i) {}
 
-ColId::~ColId() {
+Label::~Label() {
     delete name;
 }
 	
-void ColId::printAST(std::ostream &out) const {
-    out << "ColId(" << " : " <<  *name  << ")";
+void Label::printAST(std::ostream &out) const {
+    out << "Label(" << " : " <<  *name  << ")";
 }
 
-// void ColId::sem_analyze() override {
-// 	st.lookup(name, "loop"); //loop is a "kind" type
-// 	//has no type cause it's a tag
-// 	//lookup does the check		
-// }
+void Label::sem_analyze() {
+    std::string tag_name = name -> get_name();
+ 	st.lookup(tag_name); 	
+
+}
+
+Id *Label::get_id() {
+    return name;
+}
 
 // --------- ONECOLEXPR CLASS ---------
 
@@ -420,7 +428,7 @@ void FuncDef::printAST(std::ostream &out) const {
 
 // --------- VAR_DEF CLASS ---------
 
-VarDef::VarDef(Expr *i, DataType *t) : type(t), name(i) {}
+VarDef::VarDef(Id *i, DataType *t) : type(t), name(i) {}
     
 VarDef::~VarDef() {
     if(type) delete type;
@@ -431,9 +439,9 @@ void VarDef::printAST(std::ostream &out) const {
     out << "VarDef(" << *name << " is " << *type << ")";
 }
 
-// void VarDef::sem_analyze() override {
-// 	st.insert(name, type);
-// }
+void VarDef::sem_analyze() {
+ 	st.insert(name->get_name(), /**/, KIND_ID, /**/ {});
+}
 
 // --------- FUNC_DECL CLASS ---------
 
@@ -610,9 +618,12 @@ void Exit::printAST(std::ostream &out) const {
     out << "Exit(" << ")";
 }
 
+void Exit::sem_analyze() {
+    st.exitScope();
+}
 // --------- BREAK CLASS ---------
 
-Break::Break(ColId *c) : col_id(c) {}
+Break::Break(Label *c) : col_id(c) {}
 
 Break::~Break() {
     if(col_id) delete col_id;
@@ -623,14 +634,20 @@ void Break::printAST(std::ostream &out) const {
     (col_id) ? out << *col_id  << ")" : out << "no-id)";
 }
 
-// void Break::sem_analyze() override {
-// 	if(col_id)col_id->sem_analyze();
-// 	else st.lookup("loop");
-// }
+void Break::sem_analyze() {
+ 	if(col_id) {
+        col_id -> sem_analyze(); 
+        std::string name = (col_id->get_id())->get_name();
+        st.nested_pop(name);
+    }
+ 	else {
+        st.exitScope();
+    }
+}
 
 // --------- CONTINUE CLASS ---------
 
-Continue::Continue(ColId *c) : col_id(c) {}
+Continue::Continue(Label *c) : col_id(c) {}
 
 Continue::~Continue() {
     if(col_id) delete col_id;
@@ -641,10 +658,9 @@ void Continue::printAST(std::ostream &out) const {
     (col_id) ? out << *col_id  << ")" : out << "no-id)";
 }
 
-// void Continue::sem_analyze() override {
-// 	if(col_id)col_id->sem_analyze();
-// 	else st.lookup("loop");
-// }
+void Continue::sem_analyze() {
+    if(col_id) col_id -> sem_analyze();
+}
 
 // --------- RETURN CLASS ---------
 
@@ -656,6 +672,10 @@ Return::~Return() {
     
 void Return::printAST(std::ostream &out) const {
     out << "Return(" << *expr << ")";
+}
+
+void Return::sem_analyze() {
+    st.exitScope();
 }
 
 // --------- IFTHENELSE CLASS ---------
@@ -748,7 +768,7 @@ void Else::sem_analyze() {
 
 // --------- LOOP CLASS ---------
 
-Loop::Loop(Expr *i, Block *b) : name(i), block(b) {}
+Loop::Loop(Id *i, Block *b) : name(i), block(b) {}
 
 Loop::~Loop() {
     if(block) delete block;
@@ -762,8 +782,9 @@ void Loop::printAST(std::ostream &out) const {
 }
 
 void Loop::sem_analyze() {
-	// st.enterScope();
-	// if(name) st.insert(name, "loop"); //loop is a kind type (enum)
-	// else st.insert("", "loop")
+	st.enterScope();
+    std::string n = name -> get_name();
+	std::string loop_name = (!n.empty()) ? n : "default";
+    st.insert(loop_name, VOID, KIND_LOOP, {}, {}); 
 	block->sem_analyze();
 }

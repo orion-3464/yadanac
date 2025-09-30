@@ -147,6 +147,8 @@ public:
     Id();
     Id(std::string s);
 
+    std::string get_name();
+
     void printAST(std::ostream &out) const override;
 private:
     std::string name;
@@ -220,15 +222,18 @@ private:
     ColFparDef *col_def;
 };
 
-class ColId : public Id {
+class Label : public Id {
 public:
-    ColId(Expr *i);
-    ~ColId() override;
+    Label(Id *i);
+    ~Label() override;
 	
+    Id * get_id();
+
     void printAST(std::ostream &out) const override;
-	// void sem_analyze() override;
+    void sem_analyze() override;
+    
 private:
-    Expr *name;
+    Id *name;
 };
 
 class OneColExpr : public Expr {
@@ -316,14 +321,14 @@ private:
 
 class VarDef : public LocalDef {
 public:
-	VarDef(Expr *i, DataType *t);    
+	VarDef(Id *i, DataType *t);    
     ~VarDef() override;
 
 	void printAST(std::ostream &out) const override;
-	// void sem_analyze() override;
+	void sem_analyze() override;
 private:
 	DataType *type;
-	Expr *name;
+	Id *name;
 };
 
 class FuncDecl : public LocalDef {
@@ -442,29 +447,29 @@ public:
     Exit();
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 };
 
 class Break : public Stmt {
 public:
-    Break(ColId *c);
+    Break(Label *c);
     ~Break() override;
 
     void printAST(std::ostream &out) const override;
-	// void sem_analyze() override;
+	void sem_analyze() override;
 private:
-    ColId *col_id;
+    Label *col_id;
 };
 
 class Continue : public Stmt {
 public:
-    Continue(ColId *c);
+    Continue(Label *c);
     ~Continue() override;
 
     void printAST(std::ostream &out) const override;
-
-	// void sem_analyze() override;
+	void sem_analyze() override;
 private:
-    ColId *col_id;
+    Label *col_id;
 };
 
 class Return : public Stmt {
@@ -473,6 +478,7 @@ public:
     ~Return() override;
     
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private: 
     Expr *expr;
 };
@@ -529,13 +535,13 @@ private:
 
 class Loop : public Stmt {
 public:
-    Loop(Expr *i, Block *b);
+    Loop(Id *i, Block *b);
     ~Loop() override;
 
     void printAST(std::ostream &out) const override;
 	void sem_analyze() override;
 private:
-    Expr *name;
+    Id *name;
     Block *block;
 };
 

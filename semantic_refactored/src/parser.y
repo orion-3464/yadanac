@@ -76,7 +76,7 @@
     FparDef* fpardef;
     Header* header;
 	ColFparDef* colfpardef;
-	ColId* colid;
+	Label* colid;
 	DataType* datatype;
 	IsDataType* isdatatype;
 	OneColExpr* onecolexpr;
@@ -204,7 +204,7 @@ one_id  : %empty { $$ = nullptr; }
         ;
 
 col_id  : %empty	{ $$ = nullptr; }
-        | ":" T_id  { $$ = new ColId(new Id(*$2)); delete $2; }
+        | ":" T_id  { $$ = new Label(new Id(*$2)); delete $2; }
         ;
 
 l_value : T_id                  { $$ = new LValue(new Id(*$1)); delete $1; } 
