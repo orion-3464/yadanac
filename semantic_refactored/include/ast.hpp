@@ -38,6 +38,7 @@ inline std::ostream &operator<<(std::ostream &out, BaseType t) {
   }
   return out;
 }
+
 class Expr : public AST {
 public:
     Expr() = default;

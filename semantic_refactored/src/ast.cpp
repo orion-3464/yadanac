@@ -1,5 +1,6 @@
 #include "ast.hpp"
 #include "lexer.hpp"
+#include "symbol.hpp"
 
 // -------- EXPR CLASS --------
 
