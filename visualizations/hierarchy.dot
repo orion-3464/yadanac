@@ -6,55 +6,20 @@ digraph AST {
     data_type [label = "DataType", shape = box, weight = 8, style = filled, color = ".2 .6 .5"]; 
     local_def [label = "LocalDef", shape = box, weight = 8, style = filled, color = ".8 .6 .4"];
 
-    cond [label = cond, weight = 8, style = filled, color = ".6 1.0 .9"];
-
-    func_def;
-    
-    header;
-    local_def;
-    block;
-
-    id;
-    fpar_def;
-
-    fpar_type;
-
-    type;
-    int_const;
-
-    func_decl;
-    var_def;
-
-    l_value;
-    proc_call;
-    
-    string_literal;
+    cond [label = Cond, weight = 8, style = filled, color = "1.0 .4 .6"];
+    const [label = Const, weight = 8, style = filled, color = "1.0 .4 .6"];
+    id [label = Id, weight = 8, style = filled, color = "1.0 .4 .6"];
+    char [label = Char, weight = 8, style = filled, color = "1.0 .4 .6"];
+    str [label = Str, weight = 8, style = filled, color = "1.0 .4 .6"];
+    expr_list [label = ExprList, weight = 8, style = filled, color = "1.0 .4 .6"];
+    lvalue [label = Lvalue, weight = 8, style = filled, color = "1.0 .4 .6"];
+    func_call [label = FuncCall, weight = 8, style = filled, color = "1.0 .4 .6"];
+    un_expr [label = UnaryOpExpr, weight = 8, style = filled, color = "1.0 .4 .6"];
+    bin_expr [label = BinaryOpExpr, weight = 8, style = filled, color = "1.0 .4 .6"];
+    bool [label = BoolVal, weight = 8, style = filled, color = "1.0 .4 .6"];
 
     ast -> { stmt, expr, data_type, local_def };
 
-    expr -> { cond };
+    expr -> { cond, const, id, char, str, expr_list, lvalue, func_call, un_expr, bin_expr, bool };
 
-    func_def -> { header, local_def, block };
-
-    header -> { id, data_type, fpar_def };
-
-    fpar_def -> { id, fpar_type };
-
-    type -> { data_type, int_const };
-
-    fpar_type -> { type, data_type, int_const };
-
-    local_def -> { func_def, func_decl, var_def };
-
-    func_decl -> header;
-
-    var_def -> { id, type };
-
-    stmt -> { l_value, proc_call, block, cond, id };
-
-    proc_call -> { id };
-
-    func_call -> { id };
-
-    l_value -> { id, string_literal, l_value };
 }
