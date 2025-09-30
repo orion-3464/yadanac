@@ -41,6 +41,7 @@ inline std::ostream &operator<<(std::ostream &out, BaseType t) {
 class Expr : public AST {
 public:
     Expr() = default;
+    Expr(const Expr& other);
     virtual ~Expr() = default;
 
     ExprType get_type();
@@ -229,14 +230,11 @@ private:
     Expr *name;
 };
 
-class OneColExpr : public AST {
+class OneColExpr : public Expr {
 public:
     OneColExpr(Expr *e);
-    ~OneColExpr() override;
 
     void printAST(std::ostream &out) const override;
-private:
-    Expr *expr;
 };
 
 class Char : public Expr {

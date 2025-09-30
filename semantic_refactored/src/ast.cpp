@@ -1,7 +1,9 @@
 #include "ast.hpp"
 #include "lexer.hpp"
 
-// -------- BLOCK CLASS --------
+// -------- EXPR CLASS --------
+
+Expr::Expr(const Expr& other) : expr_type(other.expr_type) {}
 
 void Expr::check_type(ExprType expected_type1, ExprType expected_type2) {
     sem_analyze();
@@ -286,14 +288,12 @@ void ColId::printAST(std::ostream &out) const {
 
 // --------- ONECOLEXPR CLASS ---------
 
-OneColExpr::OneColExpr(Expr *e) : expr(e) {}
-
-OneColExpr::~OneColExpr() {
-    delete expr;
-}
+OneColExpr::OneColExpr(Expr *e) : Expr(*e) {}
 
 void OneColExpr::printAST(std::ostream &out) const {
-    out << "OneColExpr(" << " : " <<  *expr  << ")";
+    out << "OneColExpr(" << " : ";
+    Expr::printAST(out);
+    out << ")";
 }
 
 // --------- EXPR_LIST CLASS ---------
