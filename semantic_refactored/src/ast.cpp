@@ -51,14 +51,14 @@ void Block::printAST(std::ostream &out) const {
     out << ")";
 }
 
-/*
-void Block::sem_analyze() override {
+
+void Block::sem_analyze() {
     for(const auto &s : stmt_list) {
         s->sem_analyze();
     }
-    st.exitScope();
+    // exitScope();
 }
-*/
+
 
 // -------- DATA TYPE CLASS --------
 
@@ -69,10 +69,26 @@ void DataType::printAST(std::ostream &out) const {
     out << "DataType(" << type << ")";
 }
 
+BaseType DataType::get_base_type() {
+    return type;
+}
+
 // --------- CONST CLASS ---------
 
 Const::Const() {}
 Const::Const(int n) : num(n) {}
+
+int Const::get_num() {
+    return num;
+}
+
+void Const::set_empty() {
+    empty = 1;
+}
+
+int Const::isempty() {
+    return empty;
+}
 
 void Const::printAST(std::ostream &out) const {
     out << "Const(" << num << ")";
@@ -91,7 +107,25 @@ BracketList::~BracketList() {
         if(b) delete b;
 }
 
-void BracketList::append(Expr *c) { b_list.push_back(c); }
+std::vector<int> BracketList::get_sizes() {
+    std::vector<int> sizes;
+    for(const auto &c : b_list) {
+        sizes.push_back(c->get_num());
+    }
+    return sizes;
+}
+
+void BracketList::append(Const *c) { b_list.push_back(c); }
+
+void BracketList::prepend(Const *c) {
+    if(c == nullptr){
+        Const * con = new Const(42);
+        con -> set_empty();
+        b_list.insert(b_list.begin(), con);
+    }
+    else b_list.insert(b_list.begin(), c);
+}
+
 void BracketList::printAST(std::ostream &out) const {
     out << "BracketList(";
     bool first = true;
@@ -107,43 +141,60 @@ void BracketList::printAST(std::ostream &out) const {
 
 void BracketList::sem_analyze() {
     for(const auto &b: b_list) {
+        if(b->get_num() <= 0) printf("error");
         b -> sem_analyze();
     }
 }
 
 // --------- TYPE CLASS ---------
 
-Type::Type(DataType *t, Expr *c) : DataType(*t), bracket_list(c) { delete t; }
+Type::Type(DataType *t, BracketList *c) : DataType(*t), bracket_list(c) { delete t; }
     
 Type::~Type() {
     if(bracket_list) delete bracket_list;
+}
+
+std::vector<int> Type::get_dims() {
+    if(bracket_list) return bracket_list->get_sizes();
+    else return {};
 }
 
 void Type::printAST(std::ostream &out) const {
     out << "Type(" << type << ", " << *bracket_list  << ")";
 }
 
+void Type::sem_analyze() {return;}
+
 // -------- ARRAY PAR CLASS --------
 
-ArrayPar::ArrayPar(DataType *t, Expr *c) : DataType(*t), const_list(c) { delete t; }
-
-ArrayPar::~ArrayPar() {
-        if(const_list) delete const_list;
-    }
+ArrayPar::ArrayPar(DataType *t, BracketList *c) : Type(t, c) { 
+    delete t;
+    bracket_list -> prepend(nullptr);
+}
 
 void ArrayPar::printAST(std::ostream &out) const {
-    out << "ArrayPar(" << type << "[]"  << *const_list  << ")";
+    out << "ArrayPar(" << type << "[]";
+    Type::printAST(out);
+    out << ")";
 }
+
+void ArrayPar::sem_analyze() {return;}
 
 // -------- REF PAR CLASS --------
 
-RefPar::RefPar(DataType *t) : DataType(*t) {}
+RefPar::RefPar(DataType *t) : Type(t, nullptr) {}
  
 RefPar::~RefPar() {}
+
+void RefPar::sem_analyze() {
+    return;
+}
 
 void RefPar::printAST(std::ostream &out) const {
     out << "RefPar(" << "ref" << type  << ")";
 }
+
+void RefPar::sem_analyze() {return;}
 
 // ------------- ID CLASS --------------
 
@@ -158,6 +209,11 @@ void Id::printAST(std::ostream &out) const {
     out << "Id(" << name << ")";
 }
 
+void Id::sem_analyze() {
+    STEntry *e  = st.lookup(name);
+    expr_type = e->get_type();
+}
+
 // ---------- ID LIST CLASS -----------
 
 IdList::IdList() : id_list() {}
@@ -167,9 +223,17 @@ IdList::~IdList() {
         if(i) delete i;
 }
     
-void IdList::append(Expr *i) { id_list.push_back(i); }
-void IdList::prepend(Expr *i) { id_list.insert(id_list.begin(), i); }
+void IdList::append(Id *i) { id_list.push_back(i); }
+void IdList::prepend(Id *i) { id_list.insert(id_list.begin(), i); }
 bool IdList::empty() const { return id_list.empty(); }
+
+std::vector<std::string> IdList::get_names() {
+    std::vector<std::string> names;
+    for(const auto &id : id_list) {
+        names.push_back(id->get_name());
+    }
+    return names;
+}
 
 void IdList::printAST(std::ostream &out) const {
     out << "IdList(";
@@ -182,23 +246,59 @@ void IdList::printAST(std::ostream &out) const {
     out << ")";
 }
 
+void IdList::sem_analyze() {
+    for (const auto &i : id_list) {
+        i->sem_analyze();
+    }
+}
 // -------- FPARDEF CLASS --------
 
 FparDef::FparDef() : name_list(nullptr), type(nullptr) {} 
-FparDef::FparDef(Expr *i, DataType *t) : name_list(i), type(t) {}
+FparDef::FparDef(IdList *i, Type *t) : name_list(i), type(t) {}
 
 FparDef::~FparDef() {
     if(name_list) delete name_list;
     if(type) delete type;
 }
 
+IdList * FparDef::get_idlist() {
+    return name_list;
+}
+
 void FparDef::printAST(std::ostream &out) const {
     out << "FparDef(" << *name_list  << " as " << *type << ")";
 }
 
-// void FparDef::sem_analyze() override{
-// 	st.insert(name, type); //san assign, apla to kanei i function
-// }
+void FparDef::sem_analyze() {
+    std::vector<std::string> names = name_list->get_names();
+    std::vector<int> dimensions = type->get_dims();
+    BaseType b_type = type->get_base_type();
+
+    if(dimensions.empty()){
+        for(const auto &name : names) {
+            switch(b_type) {
+                case INT:
+                    st.insert(name, TYPE_INT, KIND_ID, {}, {});
+                    break;
+                case BYTE:
+                    st.insert(name, TYPE_BYTE, KIND_ID, {}, {});
+                    break;
+            }
+        }
+    }
+    else {
+        for(const auto &name : names) {
+            switch(b_type) {
+                case INT:
+                    st.insert(name, TYPE_INT_ARRAY, KIND_ID, dimensions, {});
+                    break;
+                case BYTE:
+                    st.insert(name, TYPE_BYTE_ARRAY, KIND_ID, dimensions, {});
+                    break;
+            }
+        }
+    }
+}
 
 // -------- COLFPARDEF CLASS --------
 
@@ -210,9 +310,6 @@ void ColFparDef::printAST(std::ostream &out) const {
     out << ")";
 }
 
-// void ColFparDef::sem_analyze() override {
-// 	def->sem_analyze();	
-// }
 
 // -------- FPARDEFLIST CLASS --------
 
@@ -227,20 +324,30 @@ void FparDefList::append(FparDef *d) { def_list.push_back(d); }
 void FparDefList::prepend(FparDef *d) { def_list.insert(def_list.begin(), d); }
 bool FparDefList::empty() const { return def_list.empty(); }
 
+std::vector<FparDef *> FparDefList::get_fpardeflist() {
+    return def_list;
+} 
+
 void FparDefList::printAST(std::ostream &out) const {
     out << "FparDefList(";
     bool first = true;
     for (const auto &d : def_list) {  
         if (!first) out << ", ";
         first = false;
-        (d) ? out << *d : out << "no-params";
+        (d) ? out << *d : out << "no-params"; // paizei na min ektyponetai pote to no-params
     }
     out << ")";     
 }	
 
+void FparDefList::sem_analyze() {
+    for (const auto &d : def_list) {  
+        d->sem_analyze();
+    }
+}
+
 // ----------- HEADER CLASS -----------
 
-Header::Header(Expr *s, IsDataType *d, ColFparDef *c) : name(s), is_d_type(d), col_def(c) {}
+Header::Header(Id *s, IsDataType *d, ColFparDef *c) : name(s), is_d_type(d), col_def(c) {}
 
 Header::~Header() {
     delete name;
@@ -255,15 +362,64 @@ void Header::printAST(std::ostream &out) const {
     (col_def) ? out << *col_def << ")" : out << "NO_COL_DEF)";  
 }
 
-// void Header::sem_analyze() override {
-// 	if(is_d_type){
-// 		data_type = new DataType(is_d_type->type);
-// 		st.insert(name, data_type);
-// 	}
-// 	if(col_def){
-// 		col_def->sem_analyze();
-// 	}
-// }
+void Header::sem_analyze() {
+	if(is_d_type && col_def) {
+        std::vector<FparDef*> fpardeflist = col_def->get_fpardeflist();
+        std::map<std::string, ExprType> params;
+
+        col_def -> sem_analyze();
+
+        for(auto const &fpardef : fpardeflist) {
+            IdList * name_list = fpardef -> get_idlist(); 
+            std::vector<std::string> names = name_list->get_names();       
+
+            for(const auto &n : names) {
+                STEntry * entry = st.lookup(n);
+                params.insert({n, entry->get_type()});
+            }
+        }
+
+        switch(is_d_type -> get_base_type()) {
+            case INT: 
+                st.insert(name -> get_name(), TYPE_INT, KIND_FUNC, {}, params);
+                break;
+            case BYTE: 
+                st.insert(name -> get_name(), TYPE_BYTE, KIND_FUNC, {}, params);
+                break;
+        }
+	}
+	else if(is_d_type) {
+        switch(is_d_type -> get_base_type()) {
+            case INT: 
+                st.insert(name -> get_name(), TYPE_INT, KIND_FUNC, {}, {});
+                break;
+            case BYTE: 
+                st.insert(name -> get_name(), TYPE_BYTE, KIND_FUNC, {}, {});
+                break;
+        }
+	}
+    else if(col_def) {
+		std::vector<FparDef*> fpardeflist = col_def->get_fpardeflist();
+        std::map<std::string, ExprType> params;
+
+        col_def -> sem_analyze();
+
+        for(auto const &fpardef : fpardeflist) {
+            IdList * name_list = fpardef -> get_idlist(); 
+            std::vector<std::string> names = name_list->get_names();       
+
+            for(const auto &n : names) {
+                STEntry * entry = st.lookup(n);
+                params.insert({n, entry->get_type()});
+            }
+        }
+
+        st.insert(name -> get_name(), VOID, KIND_PROC, {}, params);
+    }
+    else {
+        st.insert(name -> get_name(), VOID, KIND_PROC, {}, {});
+    }
+}
 
 // --------- IS DATA_TYPE CLASS ---------
 
@@ -288,7 +444,6 @@ void Label::printAST(std::ostream &out) const {
 void Label::sem_analyze() {
     std::string tag_name = name -> get_name();
  	st.lookup(tag_name); 	
-
 }
 
 Id *Label::get_id() {
@@ -297,17 +452,19 @@ Id *Label::get_id() {
 
 // --------- ONECOLEXPR CLASS ---------
 
-OneColExpr::OneColExpr(Expr *e) : Expr(*e) {}
+OneColExpr::OneColExpr(ExprList *e) : ExprList(*e) {}
 
 void OneColExpr::printAST(std::ostream &out) const {
     out << "OneColExpr(" << " : ";
-    Expr::printAST(out);
+    ExprList::printAST(out);
     out << ")";
 }
 
 // --------- EXPR_LIST CLASS ---------
 
 ExprList::ExprList() : expr_list() {}
+
+ExprList::ExprList(const ExprList &other) : expr_list(other.expr_list) {} 
  
 ExprList::~ExprList() {
     if(!expr_list.empty())
@@ -330,11 +487,11 @@ void ExprList::printAST(std::ostream &out) const {
     out << ")";
 }
 
-// void ExprList::sem_analyze() override {
-// 	for(const auto &e : expr_list){
-// 		e->sem_analyze();
-// 	} 
-// }
+void ExprList::sem_analyze() {
+	for(const auto &e : expr_list) {
+		e->sem_analyze();
+	} 
+}
 
 // ---------- CHAR CLASS ----------
 
@@ -362,30 +519,33 @@ void Str::sem_analyze() {
 
 // --------- LVALUE CLASS ---------
 
-LValue::LValue(Expr *str){ list.push_back(str); }
+LValue::LValue(Id *i, Str *str, ExprList *e) : id(i), str(str), list(e) {}
 
 LValue::~LValue() {
-    if(!list.empty())
-        for(auto l : list)
-            if(l) delete l;
+    if(id) delete id;
+    if(str) delete str;
+    if(list) delete list;
 }
     
-void LValue::append(Expr *e) { list.push_back(e); }
+void LValue::add(Expr *e) { list -> append(e); }
 
 void LValue::printAST(std::ostream &out) const {
     out << "LValue(";
-    bool first = true;
-    for (const auto &e : list) {
-        if (!first) out << ", ";
-        first = false;
-        out << *e;
-    }
+    if(id) out << id << ", ";
+    else out << str << ", ";
+    out << list;
     out << ")";
 }
 
-// void LValue::sem_analyze() override {
-// 	//not yet, needs more thinking..
-// }
+void LValue::sem_analyze() {
+
+}
+
+// --------- LOCAL DEF CLASS ---------
+
+DefType LocalDef::get_type() {
+    return def_type;
+}
 
 // --------- LOCAL DEF LIST CLASS ---------
 
@@ -412,9 +572,15 @@ void LocalDefList::printAST(std::ostream &out) const {
     out << ")";
 }
 
+void LocalDefList::sem_analyze() {
+    for (const auto &d : def_list) {
+        d -> sem_analyze();
+    }
+}
+
 // --------- FUNC_DEF CLASS ---------
 
-FuncDef::FuncDef(Header *h, LocalDef *l, Block *b) : head(h), def_list(l), block(b) {}
+FuncDef::FuncDef(Header *h, LocalDef *l, Block *b) : head(h), def_list(l), block(b) { def_type = FUNC_DEF; }
     
 FuncDef::~FuncDef() {
     if(head) delete head;
@@ -426,29 +592,68 @@ void FuncDef::printAST(std::ostream &out) const {
     out << "Def" << "(" << *head << ", " << *def_list << ", " << *block << ")";
 }
 
+void FuncDef::sem_analyze() {
+    st.enterScope();
+    head -> sem_analyze();
+    def_list -> sem_analyze();
+    block -> sem_analyze();
+    st.exitScope();
+}
+
 // --------- VAR_DEF CLASS ---------
 
-VarDef::VarDef(Id *i, DataType *t) : type(t), name(i) {}
+VarDef::VarDef(IdList  *i, Type *t) : type(t), names(i) { def_type = VAR_DEF; }
     
 VarDef::~VarDef() {
     if(type) delete type;
-    if(name) delete name;
+    if(names) delete names;
 }
 
 void VarDef::printAST(std::ostream &out) const {
-    out << "VarDef(" << *name << " is " << *type << ")";
+    out << "VarDef(" << *names << " is " << *type << ")";
 }
 
 void VarDef::sem_analyze() {
- 	st.insert(name->get_name(), /**/, KIND_ID, /**/ {});
+    std::vector<std::string> name_list = names -> get_names();
+    std::vector<int> dimensions = type->get_dims();
+    BaseType b_type = type->get_base_type();
+
+    if(dimensions.empty()){
+        for(const auto &name : name_list) {
+            switch(b_type) {
+                case INT:
+                    st.insert(name, TYPE_INT, KIND_ID, {}, {});
+                    break;
+                case BYTE:
+                    st.insert(name, TYPE_BYTE, KIND_ID, {}, {});
+                    break;
+            }
+        }
+    }
+    else {
+        for(const auto &name : name_list) {
+            switch(b_type) {
+                case INT:
+                    st.insert(name, TYPE_INT_ARRAY, KIND_ID, dimensions, {});
+                    break;
+                case BYTE:
+                    st.insert(name, TYPE_BYTE_ARRAY, KIND_ID, dimensions, {});
+                    break;
+            }
+        }
+    }
 }
 
 // --------- FUNC_DECL CLASS ---------
 
-FuncDecl::FuncDecl(Header *h) : header(h) {}
+FuncDecl::FuncDecl(Header *h) : header(h) { def_type = FUNC_DECL; }
 
 FuncDecl::~FuncDecl() {
-    delete header;
+    if(header) delete header;
+}
+
+void FuncDecl::sem_analyze() {
+    header -> sem_analyze();
 }
 
 void FuncDecl::printAST(std::ostream &out) const {
@@ -486,6 +691,7 @@ void FuncCall::printAST(std::ostream &out) const  {
 void FuncCall::sem_analyze() {
     //check_scope gia name
     //num of parameters are same of the func
+    return;
 }
 
 // --------- NOT_COND CLASS ---------
@@ -610,6 +816,11 @@ void Assign::printAST(std::ostream &out) const {
     out << "Assign(" << *lvalue << " := " << *expr  << ")";
 }
 
+void Assign::sem_analyze() {
+    //STEntry *e = st.lookup(lvalue -> getVar());
+    expr->check_type(expr -> get_type());
+}
+
 // --------- EXIT CLASS ---------
 
 Exit::Exit() {}
@@ -635,14 +846,7 @@ void Break::printAST(std::ostream &out) const {
 }
 
 void Break::sem_analyze() {
- 	if(col_id) {
-        col_id -> sem_analyze(); 
-        std::string name = (col_id->get_id())->get_name();
-        st.nested_pop(name);
-    }
- 	else {
-        st.exitScope();
-    }
+ 	if(col_id) col_id -> sem_analyze(); 
 }
 
 // --------- CONTINUE CLASS ---------
@@ -787,4 +991,5 @@ void Loop::sem_analyze() {
 	std::string loop_name = (!n.empty()) ? n : "default";
     st.insert(loop_name, VOID, KIND_LOOP, {}, {}); 
 	block->sem_analyze();
+    st.exitScope();
 }

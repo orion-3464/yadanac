@@ -10,6 +10,10 @@ STEntry::STEntry(ExprType t, const std::vector<int>& s) : type(t), size(s) {}
 //for funcs
 STEntry::STEntry(ExprType t, const std::map<std::string, ExprType> &p) : type(t), params(p) {}
 
+ExprType STEntry::get_type() {
+    return type;
+}
+
 
 
 Scope::Scope() {}
@@ -17,7 +21,8 @@ void Scope::insert(std::string name, ExprType type, IdKind kind, const std::vect
 	if (locals.find(name) != locals.end()){
     	//yyerror("Duplicate variable declaration");
     }
-	switch(kind){
+
+	switch(kind) {
     	case KIND_ID:
 			if(type == TYPE_INT_ARRAY || type == TYPE_BYTE_ARRAY)locals[name] = STEntry(type, size);
 			else locals[name] = STEntry(type);

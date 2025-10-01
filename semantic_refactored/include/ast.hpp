@@ -11,6 +11,12 @@ enum BaseType {
     BYTE
 };
 
+enum DefType {
+    FUNC_DEF,
+    FUNC_DECL,
+    VAR_DEF
+};
+
 class AST {
 	public:
     AST() = default;
@@ -62,12 +68,18 @@ public:
     DataType(BaseType t);
     DataType(const DataType& other);  
 
+    BaseType get_base_type();
+
     void printAST(std::ostream &out) const override;
 protected:
     BaseType type;
 };
 
 class LocalDef : public AST {
+public:
+    DefType get_type();
+protected:
+    DefType def_type;
 };
 
 
@@ -85,7 +97,7 @@ public:
     bool empty() const;
 
     virtual void printAST(std::ostream &out) const override;
-	// void sem_analyze() override;
+	void sem_analyze() override;
 private:
     std::vector<Stmt *> stmt_list;
     bool has_auto_end;
@@ -96,10 +108,15 @@ public:
     Const();
     Const(int n);
 
+    int get_num();
+    void set_empty();
+    int isempty();
+
     void printAST(std::ostream &out) const override;
 	void sem_analyze() override;
 private:
     int num;
+    int empty = 0;
 };
 
 class BracketList : public Const {      // Bracket lists are const lists
@@ -107,37 +124,45 @@ public:
     BracketList();
     ~BracketList() override;
 
-    void append(Expr *c);
+    std::vector<int> get_sizes();
+
+    void append(Const *c);
+    void prepend(Const *c);
+
     void printAST(std::ostream &out) const override ;
     void sem_analyze() override;
 private:
-    std::vector<Expr *> b_list;
+    std::vector<Const *> b_list;
 };
 
 class Type : public DataType {
 public:
-    Type(DataType *t, Expr *c);
+    Type(DataType *t, BracketList *c);
     ~Type() override;
 
+    std::vector<int> get_dims();
+
 	void printAST(std::ostream &out) const override;
-private:
-	Expr *bracket_list;
+    void sem_analyze() override;
+protected:
+	BracketList *bracket_list;
 };
 
-class ArrayPar : public DataType {
+class ArrayPar : public Type {
 public:
-    ArrayPar(DataType *t, Expr *c);
+    ArrayPar(DataType *t, BracketList *c);
     ~ArrayPar() override;
 
     void printAST(std::ostream &out) const override;
-private:
-    Expr *const_list;
+    void sem_analyze() override;
 };
 
-class RefPar : public DataType {
+class RefPar : public Type {
 public:
     RefPar(DataType *t);
     ~RefPar() override;
+
+    void sem_analyze() override;
 
     void printAST(std::ostream &out) const override;
 };
@@ -150,6 +175,7 @@ public:
     std::string get_name();
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     std::string name;
 };
@@ -159,26 +185,31 @@ public:
     IdList();
     ~IdList() override;
     
-	void append(Expr *i);
-    void prepend(Expr *i);
+	void append(Id *i);
+    void prepend(Id *i);
     bool empty() const;
 
+    std::vector<std::string> get_names();
+
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
-    std::vector<Expr *> id_list;
+    std::vector<Id *> id_list;
 };
 
 class FparDef : public AST {
 public:
 	FparDef(); 
-    FparDef(Expr *i, DataType *t);
+    FparDef(IdList *i, Type *t);
     ~FparDef() override;
 
+    IdList * get_idlist();
+
     void printAST(std::ostream &out) const override;
-	// void sem_analyze() override;
+	void sem_analyze() override;
 private:
-    Expr *name_list;
-    DataType *type;
+    IdList *name_list;
+    Type *type;
 };
 
 class FparDefList : public FparDef {
@@ -189,8 +220,10 @@ public:
 	void append(FparDef *d);
     void prepend(FparDef *d);
     bool empty() const;
+    std::vector<FparDef *> get_fpardeflist(); 
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 protected:
     std::vector<FparDef *> def_list;
 };
@@ -199,7 +232,6 @@ public:
     ColFparDef(FparDef *f);
 	
     void printAST(std::ostream &out) const override;
-	// void sem_analyze() override;
 };
 
 class IsDataType : public DataType {
@@ -211,13 +243,13 @@ public:
 
 class Header : public AST {
 public:
-    Header(Expr *s, IsDataType *d, ColFparDef *c);
+    Header(Id *s, IsDataType *d, ColFparDef *c);
     ~Header() override;
 
     void printAST(std::ostream &out) const override;
-	// void sem_analyze() override;
+	void sem_analyze() override;
 private:
-    Expr *name;
+    Id *name;
     IsDataType *is_d_type;
     ColFparDef *col_def;
 };
@@ -236,9 +268,25 @@ private:
     Id *name;
 };
 
-class OneColExpr : public Expr {
+class ExprList : public Expr {
 public:
-    OneColExpr(Expr *e);
+    ExprList();
+    ExprList(const ExprList &other);
+    ~ExprList() override;
+
+    void append(Expr *e);
+    void prepend(Expr *e);
+    bool empty() const;
+
+    void printAST(std::ostream &out) const override;
+	void sem_analyze() override;
+protected:
+    std::vector<Expr *> expr_list;
+};
+
+class OneColExpr : public ExprList {
+public:
+    OneColExpr(ExprList *e);
 
     void printAST(std::ostream &out) const override;
 };
@@ -263,34 +311,19 @@ private:
     std::string val;
 };
 
-
-class ExprList : public Expr {
-public:
-    ExprList();
-    ~ExprList() override;
-
-    void append(Expr *e);
-    void prepend(Expr *e);
-    bool empty() const;
-
-    void printAST(std::ostream &out) const override;
-	// void sem_analyze() override;
-private:
-    std::vector<Expr *> expr_list;
-};
-
 class LValue : public Expr {
 public:
-    LValue(Expr *str);
+    LValue(Id* i, Str *str, ExprList *e);
     ~LValue() override;
     
-	void append(Expr *e);
+	void add(Expr *e);
 
     void printAST(std::ostream &out) const override;
-
-	// void sem_analyze() override;
+    void sem_analyze() override;
 private:
-    std::vector<Expr *> list;
+    Id *id;
+    Str *str;
+    ExprList *list;
 };
 
 class LocalDefList : public LocalDef {
@@ -303,6 +336,7 @@ public:
     bool empty() const;
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
 	std::vector<LocalDef *> def_list;
 };
@@ -313,6 +347,7 @@ public:
     virtual ~FuncDef() override;
 
 	void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     Header *head;
     LocalDef *def_list;
@@ -321,14 +356,14 @@ private:
 
 class VarDef : public LocalDef {
 public:
-	VarDef(Id *i, DataType *t);    
+	VarDef(IdList  *i, Type *t);    
     ~VarDef() override;
 
 	void printAST(std::ostream &out) const override;
 	void sem_analyze() override;
 private:
-	DataType *type;
-	Id *name;
+	Type *type;
+	IdList *names;
 };
 
 class FuncDecl : public LocalDef {
@@ -337,6 +372,7 @@ public:
     ~FuncDecl() override;
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     Header *header;
 };
@@ -437,6 +473,7 @@ public:
     ~Assign() override;
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
     Expr *lvalue;
     Expr *expr;

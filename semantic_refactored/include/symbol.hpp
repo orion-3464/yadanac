@@ -34,6 +34,8 @@ public:
     //for funcs
     STEntry(ExprType t, const std::map<std::string, ExprType> &p);
 
+    ExprType get_type();
+
 private:
     ExprType type;
     std::vector<int> size; 

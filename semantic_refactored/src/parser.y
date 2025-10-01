@@ -207,9 +207,9 @@ col_id  : %empty	{ $$ = nullptr; }
         | ":" T_id  { $$ = new Label(new Id(*$2)); delete $2; }
         ;
 
-l_value : T_id                  { $$ = new LValue(new Id(*$1)); delete $1; } 
-        | T_str                 { $$ = new LValue(new Str(*$1)); delete $1; }
-        | l_value '[' expr ']'  { $1->append($3); $$ = $1; }
+l_value : T_id                  { $$ = new LValue(new Id(*$1), nullptr, new ExprList()); delete $1; } 
+        | T_str                 { $$ = new LValue(nullptr, new Str(*$1), new ExprList()); delete $1; }
+        | l_value '[' expr ']'  { $1 -> add($3); $$ = $1; }
         ;
 
 expr    : T_const   				{ $$ = new Const($1); }
