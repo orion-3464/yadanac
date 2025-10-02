@@ -23,20 +23,17 @@ enum IdKind {
 
 class STEntry {
 public:
-    //for loops
-    STEntry();
-    //for simple ids
-    STEntry(ExprType t);
-    //for array ids & strings 
-    STEntry(ExprType t, const std::vector<int>& s);
-    //for procs
-    STEntry(const std::map<std::string, ExprType> &p);
-    //for funcs
-    STEntry(ExprType t, const std::map<std::string, ExprType> &p);
+    STEntry(IdKind k);  //for loops
+    STEntry(IdKind k, ExprType t);    //for simple ids
+    STEntry(IdKind k, ExprType t, const std::vector<int>& s);   //for array ids & strings 
+    STEntry(IdKind k, const std::map<std::string, ExprType> &p);  //for procs
+    STEntry(IdKind k, ExprType t, const std::map<std::string, ExprType> &p);  //for funcs
 
     ExprType get_type();
-
+    std::vector<int> get_dims();
+    IdKind get_kind();
 private:
+    IdKind kind;
     ExprType type;
     std::vector<int> size; 
     std::map<std::string, ExprType> params;

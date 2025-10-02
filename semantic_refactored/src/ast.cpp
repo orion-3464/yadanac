@@ -8,6 +8,7 @@ Expr::Expr(const Expr& other) : expr_type(other.expr_type) {}
 
 void Expr::check_type(ExprType expected_type1, ExprType expected_type2) {
     sem_analyze();
+
     if(expr_type != expected_type1 || expr_type != expected_type2) printf("ERRORRRRR"); // yyerror("type_mismatch"); TO DO
 }
 
@@ -211,7 +212,8 @@ void Id::printAST(std::ostream &out) const {
 
 void Id::sem_analyze() {
     STEntry *e  = st.lookup(name);
-    expr_type = e->get_type();
+    if(!e) printf("error");
+    expr_type = e -> get_type();
 }
 
 // ---------- ID LIST CLASS -----------
@@ -475,6 +477,7 @@ ExprList::~ExprList() {
 void ExprList::append(Expr *e) { expr_list.push_back(e); }
 void ExprList::prepend(Expr *e) { expr_list.insert(expr_list.begin(), e); }
 bool ExprList::empty() const { return expr_list.empty(); }
+std::vector<Expr *> ExprList::get_list() { return expr_list; }
 
 void ExprList::printAST(std::ostream &out) const {
     out << "ExprList(";
@@ -509,6 +512,10 @@ void Char::sem_analyze() {
 
 Str::Str(std::string s) : val(s) {}
 
+std::string Str::get_string() {
+    return val;
+}
+
 void Str::printAST(std::ostream &out) const {
     out << "Str(" << val << ")";
 }
@@ -529,6 +536,10 @@ LValue::~LValue() {
     
 void LValue::add(Expr *e) { list -> append(e); }
 
+ExprType LValue::get_type() {
+    return (id) ? id -> get_type() : str -> get_type();
+}
+
 void LValue::printAST(std::ostream &out) const {
     out << "LValue(";
     if(id) out << id << ", ";
@@ -538,7 +549,42 @@ void LValue::printAST(std::ostream &out) const {
 }
 
 void LValue::sem_analyze() {
+    list -> sem_analyze();
 
+    STEntry *entry = nullptr;
+    if(id) {
+        id -> sem_analyze();
+        entry = st.lookup(id -> get_name());
+    }
+    else {
+        str -> sem_analyze();
+        entry = st.lookup(str -> get_string());
+    }
+
+    if(!entry) printf("error");
+
+    ExprType expr_type = entry -> get_type();
+
+    std::vector<int> dims = entry -> get_dims();
+
+    std::vector<Expr *> e_list = list -> get_list(); 
+
+    if(dims.empty()) {
+        if(!e_list.empty())
+            printf("error");   
+    }
+    else {
+        if(e_list.empty()) printf("error");
+
+        if(e_list.size() != entry -> get_dims().size())    // maybe we do not need the entire expr list only its size - check later
+            printf("error");
+
+        for(const auto &e : e_list) {
+            ExprType e_type = e -> get_type();
+            if(e_type == TYPE_BOOL || e_type == TYPE_BYTE_ARRAY || e_type == TYPE_INT_ARRAY)
+                printf("error");
+        }
+    }
 }
 
 // --------- LOCAL DEF CLASS ---------
@@ -676,7 +722,7 @@ void ProcCall::printAST(std::ostream &out) const {
 
 // --------- FUNC_CALL CLASS ---------
 
-FuncCall::FuncCall(Expr *i, Expr *e) : name(i), expr(e) {}
+FuncCall::FuncCall(Id *i, ExprList *e) : name(i), expr(e) {}
 
 FuncCall::~FuncCall() {
     if(name) delete name;
@@ -689,9 +735,17 @@ void FuncCall::printAST(std::ostream &out) const  {
 }
 
 void FuncCall::sem_analyze() {
-    //check_scope gia name
-    //num of parameters are same of the func
-    return;
+    STEntry * entry = st.lookup(name -> get_name());
+    if(!entry) printf("error");
+    
+    if(entry -> get_kind() != KIND_FUNC) printf("error");
+    
+    std::vector<Expr *> expr_list = expr->get_list();
+    if(entry->get_dims().size() != expr_list.size()) printf("error");
+    
+    // CHECK type of params is the same
+
+    expr_type = entry->get_type();
 }
 
 // --------- NOT_COND CLASS ---------
@@ -805,7 +859,7 @@ void Skip::sem_analyze() {
 
 // --------- ASSIGN CLASS ---------
 
-Assign::Assign(Expr *l, Expr *e) : lvalue(l), expr(e) {}
+Assign::Assign(LValue *l, Expr *e) : lvalue(l), expr(e) {}
 
 Assign::~Assign() {
     if(lvalue) delete lvalue;
@@ -817,8 +871,9 @@ void Assign::printAST(std::ostream &out) const {
 }
 
 void Assign::sem_analyze() {
-    //STEntry *e = st.lookup(lvalue -> getVar());
-    expr->check_type(expr -> get_type());
+    lvalue -> sem_analyze();
+    ExprType exp_type = lvalue -> get_type();
+    expr -> check_type(exp_type, exp_type);
 }
 
 // --------- EXIT CLASS ---------

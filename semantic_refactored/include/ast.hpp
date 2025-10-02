@@ -162,9 +162,8 @@ public:
     RefPar(DataType *t);
     ~RefPar() override;
 
-    void sem_analyze() override;
-
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 };
 
 class Id : public Expr {
@@ -277,6 +276,7 @@ public:
     void append(Expr *e);
     void prepend(Expr *e);
     bool empty() const;
+    std::vector<Expr *> get_list();
 
     void printAST(std::ostream &out) const override;
 	void sem_analyze() override;
@@ -305,6 +305,8 @@ class Str : public Expr {
 public:
     Str(std::string s);
 
+    std::string get_string();
+
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
 private:
@@ -317,6 +319,7 @@ public:
     ~LValue() override;
     
 	void add(Expr *e);
+    ExprType get_type();
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
@@ -390,14 +393,14 @@ private:
 
 class FuncCall : public Expr {
 public:
-    FuncCall(Expr *i, Expr *e);
+    FuncCall(Id *i, ExprList *e);
     ~FuncCall() override;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
 private:
-    Expr *name;
-    Expr *expr;
+    Id *name;
+    ExprList *expr;
 };
 
 class NotCond : public Cond {
@@ -469,13 +472,13 @@ public:
 
 class Assign : public Stmt {
 public:
-    Assign(Expr *l, Expr *e);
+    Assign(LValue *l, Expr *e);
     ~Assign() override;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
 private:
-    Expr *lvalue;
+    LValue *lvalue;
     Expr *expr;
 };
 
