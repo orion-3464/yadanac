@@ -6,11 +6,12 @@
 %code requires {
     #include <string>
     #include "ast.hpp"
-    #include "lexer.hpp"
     #include "symbol.hpp"
 }
 
 %code {
+    #include "lexer.hpp"
+
 	SymbolTable st;
 }
 
@@ -79,7 +80,7 @@
 	Label* colid;
 	DataType* datatype;
 	IsDataType* isdatatype;
-	OneColExpr* onecolexpr;
+	//OneColExpr* onecolexpr;
 	LocalDefList* localdeflist;
 	FparDefList* fpardeflist;
 	IdList* idlist;
@@ -88,12 +89,13 @@
 	ExprList* exprlist;
 	BracketList* bracketlist;
 	LValue* lvalue;
+    Id* id;
+    Type* type;
 }
   
-%type<onecolexpr>   one_col_expr
+//%type<onecolexpr>   one_col_expr
 %type<lvalue>		l_value
 %type<header>		header
-%type<datatype>		data_type
 %type<isdatatype>	is_data_type
 %type<colid>		col_id
 %type<colfpardef> 	col_fpar_def
@@ -105,11 +107,13 @@
 %type<localdef> 	func_def func_decl var_def local_def
 %type<fpardef>  	fpar_def
 %type<bracketlist>	bracket_int_const_list
-%type<exprlist>		expr_list
-%type<expr>     	one_id expr one_expr func_call cond
-%type<datatype> 	type fpar_type 
+%type<exprlist>		expr_list one_col_expr one_expr
+%type<expr>     	expr func_call cond
+%type<datatype> 	data_type 
+%type<type>         type fpar_type
 %type<stmt>     	stmt else_col_block proc_call
 %type<op>       	'!'
+%type<id>           one_id 
 
 %%
 
@@ -145,8 +149,8 @@ id_list : %empty 	   { $$ = new IdList(); }
         | id_list T_id { $1->append(new Id(*$2)); $$ = $1; delete $2; }
         ;
 
-data_type   : "int"  { $$ = new DataType(TYPE_INT); } 
-            | "byte" { $$ = new DataType(TYPE_BYTE); } 
+data_type   : "int"  { $$ = new DataType(INT); } 
+            | "byte" { $$ = new DataType(BYTE); } 
             ;
 
 fpar_type   : type					        			{ $$ = $1; }
@@ -252,14 +256,14 @@ one_expr    : %empty 		 { $$ = nullptr; }
 cond    : expr						{ $$ = $1; }
         | '(' cond ')'				{ $$ = $2; }
         | "not" cond %prec UNOTNOT	{ $$ = new NotCond($2); }
-        | cond "and" cond			{ $$ = new BinOpCond($1, $2, $3); delete $2; }
-        | cond "or" cond			{ $$ = new BinOpCond($1, $2, $3); delete $2; }
-        | expr '=' expr				{ $$ = new BinOpExpr($1, $2, $3); delete $2; } // may fix the leak     
-        | expr "<>" expr			{ $$ = new BinOpExpr($1, $2, $3); delete $2; }
-        | expr '<' expr				{ $$ = new BinOpExpr($1, $2, $3); delete $2; } // may fix the leak
-        | expr '>' expr				{ $$ = new BinOpExpr($1, $2, $3); delete $2; } // may fix the leak
-        | expr "<=" expr			{ $$ = new BinOpExpr($1, $2, $3); delete $2; }
-        | expr ">=" expr			{ $$ = new BinOpExpr($1, $2, $3); delete $2; }
+        | cond "and" cond			{ $$ = new BinOpCond($1, $2, $3);  }
+        | cond "or" cond			{ $$ = new BinOpCond($1, $2, $3);  }
+        | expr '=' expr				{ $$ = new BinOpExpr($1, $2, $3);  } // may fix the leak     
+        | expr "<>" expr			{ $$ = new BinOpExpr($1, $2, $3);  }
+        | expr '<' expr				{ $$ = new BinOpExpr($1, $2, $3);  } // may fix the leak
+        | expr '>' expr				{ $$ = new BinOpExpr($1, $2, $3);  } // may fix the leak
+        | expr "<=" expr			{ $$ = new BinOpExpr($1, $2, $3);  }
+        | expr ">=" expr			{ $$ = new BinOpExpr($1, $2, $3);  }
         ;
 
 %%

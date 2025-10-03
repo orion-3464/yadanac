@@ -52,27 +52,26 @@ void Block::printAST(std::ostream &out) const {
     out << ")";
 }
 
-
 void Block::sem_analyze() {
     for(const auto &s : stmt_list) {
         s->sem_analyze();
     }
-    // exitScope();
 }
-
 
 // -------- DATA TYPE CLASS --------
 
 DataType::DataType(BaseType t) : type(t) {}
 DataType::DataType(const DataType& other) : type(other.type) {}
 
+BaseType DataType::get_base_type() {
+    return type;
+}
+
 void DataType::printAST(std::ostream &out) const {
     out << "DataType(" << type << ")";
 }
 
-BaseType DataType::get_base_type() {
-    return type;
-}
+void DataType::sem_analyze() { return; }
 
 // --------- CONST CLASS ---------
 
@@ -142,7 +141,7 @@ void BracketList::printAST(std::ostream &out) const {
 
 void BracketList::sem_analyze() {
     for(const auto &b: b_list) {
-        if(b->get_num() <= 0) printf("error");
+        //if(b->get_num() <= 0) printf("error");
         b -> sem_analyze();
     }
 }
@@ -164,12 +163,11 @@ void Type::printAST(std::ostream &out) const {
     out << "Type(" << type << ", " << *bracket_list  << ")";
 }
 
-void Type::sem_analyze() {return;}
+void Type::sem_analyze() { return; }
 
 // -------- ARRAY PAR CLASS --------
 
 ArrayPar::ArrayPar(DataType *t, BracketList *c) : Type(t, c) { 
-    delete t;
     bracket_list -> prepend(nullptr);
 }
 
@@ -179,7 +177,7 @@ void ArrayPar::printAST(std::ostream &out) const {
     out << ")";
 }
 
-void ArrayPar::sem_analyze() {return;}
+void ArrayPar::sem_analyze() { return; }
 
 // -------- REF PAR CLASS --------
 
@@ -187,15 +185,11 @@ RefPar::RefPar(DataType *t) : Type(t, nullptr) {}
  
 RefPar::~RefPar() {}
 
-void RefPar::sem_analyze() {
-    return;
-}
-
 void RefPar::printAST(std::ostream &out) const {
     out << "RefPar(" << "ref" << type  << ")";
 }
 
-void RefPar::sem_analyze() {return;}
+void RefPar::sem_analyze() { return; }
 
 // ------------- ID CLASS --------------
 
@@ -212,7 +206,10 @@ void Id::printAST(std::ostream &out) const {
 
 void Id::sem_analyze() {
     STEntry *e  = st.lookup(name);
-    if(!e) printf("error");
+    if(!e) {
+        printf("error");
+        return;
+    }
     expr_type = e -> get_type();
 }
 
@@ -342,7 +339,7 @@ void FparDefList::printAST(std::ostream &out) const {
 }	
 
 void FparDefList::sem_analyze() {
-    for (const auto &d : def_list) {  
+    for(const auto &d : def_list) {  
         d->sem_analyze();
     }
 }
@@ -365,6 +362,9 @@ void Header::printAST(std::ostream &out) const {
 }
 
 void Header::sem_analyze() {
+    name -> sem_analyze();
+    if(is_d_type) is_d_type -> sem_analyze();
+
 	if(is_d_type && col_def) {
         std::vector<FparDef*> fpardeflist = col_def->get_fpardeflist();
         std::map<std::string, ExprType> params;
@@ -431,6 +431,10 @@ void IsDataType::printAST(std::ostream &out) const {
     out << "IsDataType(" << " is " << type << ")";
 }
 
+void IsDataType::sem_analyze() {
+    return;
+}
+
 // --------- COLID CLASS ---------
 
 Label::Label(Id *i) : name(i) {}
@@ -443,13 +447,13 @@ void Label::printAST(std::ostream &out) const {
     out << "Label(" << " : " <<  *name  << ")";
 }
 
+Id *Label::get_id() {
+    return name;
+}
+
 void Label::sem_analyze() {
     std::string tag_name = name -> get_name();
  	st.lookup(tag_name); 	
-}
-
-Id *Label::get_id() {
-    return name;
 }
 
 // --------- ONECOLEXPR CLASS ---------
@@ -466,7 +470,7 @@ void OneColExpr::printAST(std::ostream &out) const {
 
 ExprList::ExprList() : expr_list() {}
 
-ExprList::ExprList(const ExprList &other) : expr_list(other.expr_list) {} 
+ExprList::ExprList(const ExprList &other) : Expr(other), expr_list(other.expr_list) {} 
  
 ExprList::~ExprList() {
     if(!expr_list.empty())
@@ -542,9 +546,9 @@ ExprType LValue::get_type() {
 
 void LValue::printAST(std::ostream &out) const {
     out << "LValue(";
-    if(id) out << id << ", ";
-    else out << str << ", ";
-    out << list;
+    if(id) out << *id << ", ";
+    else out << *str << ", ";
+    out << *list;
     out << ")";
 }
 
@@ -563,7 +567,7 @@ void LValue::sem_analyze() {
 
     if(!entry) printf("error");
 
-    ExprType expr_type = entry -> get_type();
+    expr_type = entry -> get_type();
 
     std::vector<int> dims = entry -> get_dims();
 
@@ -708,7 +712,7 @@ void FuncDecl::printAST(std::ostream &out) const {
 
 // --------- PROC_DECL CLASS ---------
 
-ProcCall::ProcCall(Expr *i, OneColExpr *e) : name(i), col_expr(e) {}
+ProcCall::ProcCall(Id *i, ExprList *e) : name(i), col_expr(e) {}
 
 ProcCall::~ProcCall() {
     if(name) delete name;
@@ -718,6 +722,28 @@ ProcCall::~ProcCall() {
 void ProcCall::printAST(std::ostream &out) const {
     out << "ProcCall(" << *name << ", ";
     (col_expr) ? out << *col_expr  << ")" : out << "NO_ARGS)"; 
+}
+
+void ProcCall::sem_analyze() {
+    name -> sem_analyze();
+    col_expr -> sem_analyze();
+
+    STEntry * entry = st.lookup(name -> get_name());
+    if(!entry) printf("error");
+
+    std::vector<Expr *> expr_list = col_expr -> get_list();
+    if(entry->get_dims().size() != expr_list.size()) {
+        printf("error");
+        return;
+    }
+
+    int i = 0;
+    for(const auto &p : entry -> get_params()) {
+        if(p.second != expr_list[i] -> get_type())
+            printf("error");
+            return;
+        ++i;
+    }
 }
 
 // --------- FUNC_CALL CLASS ---------
@@ -735,16 +761,28 @@ void FuncCall::printAST(std::ostream &out) const  {
 }
 
 void FuncCall::sem_analyze() {
+    name -> sem_analyze();
+    expr -> sem_analyze();
+
     STEntry * entry = st.lookup(name -> get_name());
     if(!entry) printf("error");
     
     if(entry -> get_kind() != KIND_FUNC) printf("error");
     
-    std::vector<Expr *> expr_list = expr->get_list();
-    if(entry->get_dims().size() != expr_list.size()) printf("error");
-    
-    // CHECK type of params is the same
+    std::vector<Expr *> expr_list = expr -> get_list();
+    if(entry->get_dims().size() != expr_list.size()) {
+        printf("error");
+        return;
+    }
 
+    int i = 0;
+    for(const auto &p : entry -> get_params()) {
+        if(p.second != expr_list[i] -> get_type())
+            printf("error");
+            return;
+        ++i;
+    }
+    
     expr_type = entry->get_type();
 }
 
@@ -885,7 +923,7 @@ void Exit::printAST(std::ostream &out) const {
 }
 
 void Exit::sem_analyze() {
-    st.exitScope();
+    return;
 }
 // --------- BREAK CLASS ---------
 
@@ -934,7 +972,8 @@ void Return::printAST(std::ostream &out) const {
 }
 
 void Return::sem_analyze() {
-    st.exitScope();
+    ExprType def_type = st.get_def();
+    expr -> check_type(def_type, def_type);
 }
 
 // --------- IFTHENELSE CLASS ---------
@@ -1041,10 +1080,8 @@ void Loop::printAST(std::ostream &out) const {
 }
 
 void Loop::sem_analyze() {
-	st.enterScope();
     std::string n = name -> get_name();
 	std::string loop_name = (!n.empty()) ? n : "default";
     st.insert(loop_name, VOID, KIND_LOOP, {}, {}); 
 	block->sem_analyze();
-    st.exitScope();
 }

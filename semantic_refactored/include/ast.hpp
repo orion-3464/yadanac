@@ -71,6 +71,7 @@ public:
     BaseType get_base_type();
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 protected:
     BaseType type;
 };
@@ -151,7 +152,6 @@ protected:
 class ArrayPar : public Type {
 public:
     ArrayPar(DataType *t, BracketList *c);
-    ~ArrayPar() override;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
@@ -238,6 +238,7 @@ public:
     IsDataType(DataType *t);
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 };
 
 class Header : public AST {
@@ -382,13 +383,14 @@ private:
 
 class ProcCall : public Stmt {
 public:
-    ProcCall(Expr *i, OneColExpr *e);
+    ProcCall(Id *i, ExprList *e);
     ~ProcCall() override;
 
     void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
 private:
-    Expr *name;
-    OneColExpr *col_expr;
+    Id *name;
+    ExprList *col_expr;
 };
 
 class FuncCall : public Expr {

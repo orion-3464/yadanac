@@ -34,7 +34,7 @@ $(BUILD_DIR)/lexer.cpp: $(SRC_DIR)/lexer.l $(BUILD_DIR)/parser.hpp | $(BUILD_DIR
 
 # ---- C++ SOURCE FILES COMPILATION ----
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp $(BUILD_DIR)/parser.hpp | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c -o $@ $<
 
 $(BUILD_DIR)/parser.o: $(BUILD_DIR)/parser.cpp

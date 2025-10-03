@@ -23,6 +23,7 @@ enum IdKind {
 
 class STEntry {
 public:
+    STEntry() = default;
     STEntry(IdKind k);  //for loops
     STEntry(IdKind k, ExprType t);    //for simple ids
     STEntry(IdKind k, ExprType t, const std::vector<int>& s);   //for array ids & strings 
@@ -32,6 +33,7 @@ public:
     ExprType get_type();
     std::vector<int> get_dims();
     IdKind get_kind();
+    std::map<std::string, ExprType> get_params();
 private:
     IdKind kind;
     ExprType type;
@@ -41,9 +43,11 @@ private:
 
 class Scope {
 public:
-    Scope() {}
+    Scope();
     void insert(std::string n, ExprType t, IdKind k, const std::vector<int> &s, const std::map<std::string, ExprType> &p);
     STEntry *lookup(std::string n);
+
+    ExprType get_ret_type();
 
 private:
     std::map<std::string, STEntry> locals;
@@ -57,6 +61,8 @@ public:
 
     void enterScope();
     void exitScope();
+
+    ExprType get_def();
 private:
     std::vector<Scope> scopes;
 };

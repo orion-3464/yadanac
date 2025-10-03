@@ -8,6 +8,10 @@ STEntry::STEntry(IdKind k, const std::map<std::string, ExprType> &p) : kind(k), 
 STEntry::STEntry(IdKind k, ExprType t, const std::vector<int>& s) : kind(k), type(t), size(s) {}   //for array ids & strings 
 STEntry::STEntry(IdKind k, ExprType t, const std::map<std::string, ExprType> &p) : kind(k), type(t), params(p) {}  //for funcs
 
+std::map<std::string, ExprType> STEntry::get_params() {
+    return params;
+}
+
 ExprType STEntry::get_type() {
     return type;
 }
@@ -47,6 +51,11 @@ STEntry *Scope::lookup(std::string n) {
     return &(locals[n]);
 }
 
+ExprType Scope::get_ret_type() {
+    STEntry e = locals.begin() -> second;
+    return e.get_type();
+}
+
 void SymbolTable::insert(std::string name, ExprType type, IdKind kind, const std::vector<int> &size, std::map<std::string, ExprType> const &params) {
     scopes.back().insert(name, type, kind, size, params);
 }
@@ -81,4 +90,9 @@ void SymbolTable::enterScope() {
 
 void SymbolTable::exitScope() {
     scopes.pop_back();
+}
+
+ExprType SymbolTable::get_def() {
+    Scope scope = scopes.back();
+    return scope.get_ret_type();
 }
