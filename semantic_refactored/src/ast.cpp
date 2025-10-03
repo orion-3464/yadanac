@@ -249,6 +249,7 @@ void IdList::sem_analyze() {
     for (const auto &i : id_list) {
         i->sem_analyze();
     }
+    return;
 }
 // -------- FPARDEF CLASS --------
 
@@ -340,7 +341,7 @@ void FparDefList::printAST(std::ostream &out) const {
 
 void FparDefList::sem_analyze() {
     for(const auto &d : def_list) {  
-        d->sem_analyze();
+        d -> sem_analyze();
     }
 }
 
@@ -668,7 +669,7 @@ void VarDef::sem_analyze() {
     std::vector<int> dimensions = type->get_dims();
     BaseType b_type = type->get_base_type();
 
-    if(dimensions.empty()){
+    if(dimensions.empty()) {
         for(const auto &name : name_list) {
             switch(b_type) {
                 case INT:

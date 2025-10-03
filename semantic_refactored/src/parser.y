@@ -117,7 +117,7 @@
 
 %%
 
-program : func_def { std::cout << "AST: " << *$1 << std::endl;/* $1->sem_analyze(); */ delete $1; }
+program : func_def { std::cout << "AST: " << *$1 << std::endl; $1->sem_analyze(); delete $1; }
 	    ;
 
 func_def    : "def" header local_def_list block { $$ = new FuncDef($2, $3, $4); } 

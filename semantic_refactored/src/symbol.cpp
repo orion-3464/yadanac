@@ -27,6 +27,7 @@ IdKind STEntry::get_kind() {
 Scope::Scope() {}
 void Scope::insert(std::string name, ExprType type, IdKind kind, const std::vector<int> &size, std::map<std::string, ExprType> const &params) {
 	if (locals.find(name) != locals.end()){
+        printf("error duplicate declaration");
     	//yyerror("Duplicate variable declaration");
     }
 
@@ -66,6 +67,7 @@ STEntry *SymbolTable::lookup(std::string n) {
       	if (e != nullptr) return e;
     }
     //yyerror("Variable not found");
+    printf("error var not found");
     return nullptr;
 }
 
