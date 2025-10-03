@@ -287,7 +287,7 @@ int main(int argc, char* argv[]) {
             exit(1);
         }   
     }
-
+    
     yyin = f;
 
     detect_block_style(yyin);

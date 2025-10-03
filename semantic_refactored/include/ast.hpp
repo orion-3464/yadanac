@@ -203,6 +203,7 @@ public:
     ~FparDef() override;
 
     IdList * get_idlist();
+    Type* get_type();
 
     void printAST(std::ostream &out) const override;
 	void sem_analyze() override;

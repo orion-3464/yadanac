@@ -1,4 +1,5 @@
 #include "symbol.hpp"
+#include <iostream>
 
 // -------- STENTRY CLASS --------
 
@@ -26,6 +27,7 @@ IdKind STEntry::get_kind() {
 
 Scope::Scope() {}
 void Scope::insert(std::string name, ExprType type, IdKind kind, const std::vector<int> &size, std::map<std::string, ExprType> const &params) {
+    std::cout << "Insert in current scope " << name << std::endl;
 	if (locals.find(name) != locals.end()){
         printf("error duplicate declaration");
     	//yyerror("Duplicate variable declaration");
@@ -58,6 +60,7 @@ ExprType Scope::get_ret_type() {
 }
 
 void SymbolTable::insert(std::string name, ExprType type, IdKind kind, const std::vector<int> &size, std::map<std::string, ExprType> const &params) {
+    std::cout << "Insert in Symbol Table " << name << std::endl;
     scopes.back().insert(name, type, kind, size, params);
 }
 
@@ -87,10 +90,12 @@ void SymbolTable::nested_pop(std::string n) {
 }
 
 void SymbolTable::enterScope() {
+    printf("Entered scope \n");
     scopes.push_back(Scope());
 }
 
 void SymbolTable::exitScope() {
+    printf("Exited scope \n");
     scopes.pop_back();
 }
 

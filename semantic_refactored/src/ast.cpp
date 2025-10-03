@@ -9,7 +9,7 @@ Expr::Expr(const Expr& other) : expr_type(other.expr_type) {}
 void Expr::check_type(ExprType expected_type1, ExprType expected_type2) {
     sem_analyze();
 
-    if(expr_type != expected_type1 || expr_type != expected_type2) printf("ERRORRRRR"); // yyerror("type_mismatch"); TO DO
+    if(expr_type != expected_type1 && expr_type != expected_type2) printf("ERRORRRRR"); // yyerror("type_mismatch"); TO DO
 }
 
 ExprType Expr::get_type() {
@@ -265,6 +265,10 @@ IdList * FparDef::get_idlist() {
     return name_list;
 }
 
+Type* FparDef::get_type() {
+    return type;
+}
+
 void FparDef::printAST(std::ostream &out) const {
     out << "FparDef(" << *name_list  << " as " << *type << ")";
 }
@@ -363,7 +367,7 @@ void Header::printAST(std::ostream &out) const {
 }
 
 void Header::sem_analyze() {
-    name -> sem_analyze();
+    // name -> sem_analyze();
     if(is_d_type) is_d_type -> sem_analyze();
 
 	if(is_d_type && col_def) {
