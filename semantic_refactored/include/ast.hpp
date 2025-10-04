@@ -51,7 +51,7 @@ public:
     Expr(const Expr& other);
     virtual ~Expr() = default;
 
-    ExprType get_type();
+    ExprType get_type() const;
     void check_type(ExprType expected_type1, ExprType expected_type2);
 protected:
     ExprType expr_type;
@@ -68,7 +68,7 @@ public:
     DataType(BaseType t);
     DataType(const DataType& other);  
 
-    BaseType get_base_type();
+    BaseType get_base_type() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
@@ -78,7 +78,7 @@ protected:
 
 class LocalDef : public AST {
 public:
-    DefType get_type();
+    DefType get_type() const;
 protected:
     DefType def_type;
 };
@@ -109,7 +109,7 @@ public:
     Const();
     Const(int n);
 
-    int get_num();
+    int get_num() const;
     void set_empty();
     int isempty();
 
@@ -125,7 +125,7 @@ public:
     BracketList();
     ~BracketList() override;
 
-    std::vector<int> get_sizes();
+    std::vector<int> get_sizes() const;
 
     void append(Const *c);
     void prepend(Const *c);
@@ -141,7 +141,7 @@ public:
     Type(DataType *t, BracketList *c);
     ~Type() override;
 
-    std::vector<int> get_dims();
+    std::vector<int> get_dims() const;
 
 	void printAST(std::ostream &out) const override;
     void sem_analyze() override;
@@ -171,7 +171,7 @@ public:
     Id();
     Id(std::string s);
 
-    std::string get_name();
+    std::string get_name() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
@@ -188,7 +188,7 @@ public:
     void prepend(Id *i);
     bool empty() const;
 
-    std::vector<std::string> get_names();
+    std::vector<std::string> get_names() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
@@ -202,8 +202,8 @@ public:
     FparDef(IdList *i, Type *t);
     ~FparDef() override;
 
-    IdList * get_idlist();
-    Type* get_type();
+    IdList * get_idlist() const;
+    Type* get_type() const;
 
     void printAST(std::ostream &out) const override;
 	void sem_analyze() override;
@@ -220,7 +220,7 @@ public:
 	void append(FparDef *d);
     void prepend(FparDef *d);
     bool empty() const;
-    std::vector<FparDef *> get_fpardeflist(); 
+    std::vector<FparDef *> get_fpardeflist() const; 
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
@@ -260,7 +260,7 @@ public:
     Label(Id *i);
     ~Label() override;
 	
-    Id * get_id();
+    Id * get_id() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
@@ -278,7 +278,7 @@ public:
     void append(Expr *e);
     void prepend(Expr *e);
     bool empty() const;
-    std::vector<Expr *> get_list();
+    std::vector<Expr *> get_list() const;
 
     void printAST(std::ostream &out) const override;
 	void sem_analyze() override;
@@ -306,8 +306,8 @@ private:
 class Str : public Expr {
 public:
     Str(std::string s);
-
-    std::string get_string();
+    
+    std::string get_string() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
@@ -321,7 +321,7 @@ public:
     ~LValue() override;
     
 	void add(Expr *e);
-    ExprType get_type();
+    ExprType get_type() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
