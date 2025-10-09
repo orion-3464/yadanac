@@ -199,6 +199,7 @@ private:
 class FparDef : public AST {
 public:
 	FparDef(); 
+    FparDef(const FparDef &other);
     FparDef(IdList *i, Type *t);
     ~FparDef() override;
 
@@ -229,7 +230,7 @@ protected:
 };
 class ColFparDef : public FparDefList { 
 public:
-    ColFparDef(FparDef *f);
+    ColFparDef(FparDefList *f);
 	
     void printAST(std::ostream &out) const override;
 };

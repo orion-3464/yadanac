@@ -25,9 +25,15 @@ IdKind STEntry::get_kind() {
     return kind;
 }
 
+// -------- SCOPE CLASS --------
+
 Scope::Scope() {}
+
 void Scope::insert(std::string name, ExprType type, IdKind kind, const std::vector<int> &size, std::map<std::string, ExprType> const &params) {
-    std::cout << "Insert in current scope " << name << std::endl;
+    std::cout << "Insert in current scope with name: " << name << " and kind: " << kind << std::endl;
+    for(auto param : params) {
+        std::cout << "Parameters: " << param.first << ", " << param.second << std::endl;
+    }
 	if (locals.find(name) != locals.end()){
         printf("error duplicate declaration");
     	//yyerror("Duplicate variable declaration");
@@ -57,6 +63,64 @@ STEntry *Scope::lookup(std::string n) {
 ExprType Scope::get_ret_type() {
     STEntry e = locals.begin() -> second;
     return e.get_type();
+}
+
+// -------- SYMBOL TABLE CLASS --------
+
+SymbolTable::SymbolTable() {
+    scopes.push_back(Scope());
+
+    std::map<std::string, ExprType> params;
+
+    params.insert({"n", TYPE_INT});
+    insert("writeInteger", VOID, KIND_PROC, {}, params);
+    
+    params.erase("n"); 
+    params.insert({"b", TYPE_BYTE});
+    insert("writeByte", VOID, KIND_PROC, {}, params);
+
+    insert("writeChar", VOID, KIND_PROC, {}, params);
+
+    params.erase("b"); 
+    params.insert({"s", TYPE_BYTE_ARRAY});
+    insert("writeString", VOID, KIND_PROC, {}, params);
+
+    insert("readInteger", TYPE_INT, KIND_FUNC, {}, {});
+
+    insert("readByte", TYPE_BYTE, KIND_FUNC, {}, {});
+
+    insert("readChar", TYPE_BYTE, KIND_FUNC, {}, {});
+
+    params.erase("s"); 
+    params.insert({"n", TYPE_INT});
+    params.insert({"s", TYPE_BYTE_ARRAY});
+    insert("readString", VOID, KIND_PROC, {}, params);
+
+    params.erase("n");
+    params.erase("s"); 
+    params.insert({"b", TYPE_BYTE});
+    insert("extend", TYPE_INT, KIND_FUNC, {}, params);
+
+    params.erase("b"); 
+    params.insert({"i", TYPE_INT});
+    insert("shrink", TYPE_BYTE, KIND_FUNC, {}, params);
+
+    params.erase("i"); 
+    params.insert({"s", TYPE_BYTE_ARRAY});
+    insert("strlen", TYPE_INT, KIND_FUNC, {}, params);
+
+    params.erase("s"); 
+    params.insert({"s1", TYPE_BYTE_ARRAY});
+    params.insert({"s2", TYPE_BYTE_ARRAY});
+    insert("strcmp", TYPE_INT, KIND_FUNC, {}, params);
+
+    params.erase("s1");
+    params.erase("s2"); 
+    params.insert({"trg", TYPE_BYTE_ARRAY});
+    params.insert({"src", TYPE_BYTE_ARRAY});
+    insert("strcpy", VOID, KIND_PROC, {}, params);
+
+    insert("strcat", VOID, KIND_PROC, {}, params);
 }
 
 void SymbolTable::insert(std::string name, ExprType type, IdKind kind, const std::vector<int> &size, std::map<std::string, ExprType> const &params) {

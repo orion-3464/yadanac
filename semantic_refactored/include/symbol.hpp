@@ -55,6 +55,8 @@ private:
 
 class SymbolTable {
 public:
+    SymbolTable();
+
     void insert(std::string n, ExprType t, IdKind k, const std::vector<int> &s, const std::map<std::string, ExprType> &p);      // Den eimai sigouros gia to string to evala stin tixi epeidi einai geniko
     STEntry *lookup(std::string v);
     void nested_pop(std::string n);
