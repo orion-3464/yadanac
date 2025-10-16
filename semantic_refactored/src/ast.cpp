@@ -7,10 +7,12 @@
 Expr::Expr(const Expr &other) : expr_type(other.expr_type) {}
 
 void Expr::check_type(ExprType expected_type1, ExprType expected_type2) {
-  sem_analyze();
+    sem_analyze();
 
-  if (expr_type != expected_type1 && expr_type != expected_type2)
-    printf("ERRORRRRR"); // yyerror("type_mismatch"); TO DO
+    if(expr_type != expected_type1 && expr_type != expected_type2) {
+        //std::cout << expected_type1 << " || " << expected_type2 << " - " << expr_type << std::endl;
+        std::cout << "type_mismatch" << std::endl;  // yyerror("type_mismatch"); TO DO
+    }
 }
 
 ExprType Expr::get_type() const { return expr_type; }
@@ -50,9 +52,9 @@ void Block::printAST(std::ostream &out) const {
 }
 
 void Block::sem_analyze() {
-  for(const auto &s : stmt_list) {
-    s->sem_analyze();
-  }
+    for(const auto &s : stmt_list) {
+        s -> sem_analyze();
+    }
 }
 
 // -------- DATA TYPE CLASS --------
@@ -94,11 +96,11 @@ BracketList::~BracketList() {
 }
 
 std::vector<int> BracketList::get_sizes() const {
-  std::vector<int> sizes;
-  for (const auto &c : b_list) {
-    sizes.push_back(c->get_num());
-  }
-  return sizes;
+    std::vector<int> sizes;
+    for (const auto &c : b_list) {
+        sizes.push_back(c->get_num());
+    }
+    return sizes;
 }
 
 void BracketList::append(Const *c) { b_list.push_back(c); }
@@ -194,11 +196,11 @@ void Id::printAST(std::ostream &out) const { out << "Id(" << name << ")"; }
 
 void Id::sem_analyze() {
   STEntry *e = st.lookup(name);
-  if (!e) {
+  if(!e) {
     printf("error on id sem analyze");
     return;
   }
-  expr_type = e->get_type();
+  expr_type = e -> get_type();
 }
 
 // ---------- ID LIST CLASS -----------
@@ -266,22 +268,26 @@ void FparDef::printAST(std::ostream &out) const {
 }
 
 void FparDef::sem_analyze() {
-  std::vector<std::string> names = name_list -> get_names();
-  std::vector<int> dimensions = type -> get_dims();
-  BaseType b_type = type -> get_base_type();
+    std::vector<std::string> names = name_list -> get_names();
+    std::vector<int> dimensions = type -> get_dims();
+    BaseType b_type = type -> get_base_type();
 
-  if(dimensions.empty()) {
-    for (const auto &name : names) {
-      switch (b_type) {
-      case INT:
-        st.insert(name, TYPE_INT, KIND_ID, {}, {});
-        break;
-      case BYTE:
-        st.insert(name, TYPE_BYTE, KIND_ID, {}, {});
-        break;
-      }
-    }
-  } 
+    for(auto s : names) std::cout << "Definition's names are " << s << std::endl;
+    for(auto d : dimensions) std::cout << "Definition's dimentions are " << d << std::endl;
+    std::cout << b_type << std::endl;
+ 
+    if(dimensions.empty()) {
+        for (const auto &name : names) {
+            switch (b_type) {
+                case INT:
+                    st.insert(name, TYPE_INT, KIND_ID, {}, {});
+                    break;
+                case BYTE:
+                    st.insert(name, TYPE_BYTE, KIND_ID, {}, {});
+                    break;
+            }
+        }   
+    } 
   else {
     for (const auto &name : names) {
       switch (b_type) {
@@ -336,9 +342,9 @@ void FparDefList::printAST(std::ostream &out) const {
 }
 
 void FparDefList::sem_analyze() {
-  for (const auto &d : def_list) {
-    d->sem_analyze();
-  }
+    for (const auto &d : def_list) {
+        d->sem_analyze();
+    }
 }
 
 // ----------- HEADER CLASS -----------
@@ -366,19 +372,19 @@ void Header::sem_analyze() {
     is_d_type->sem_analyze();
 
   if(is_d_type && col_def) {
-    std::vector<FparDef *> fpardeflist = col_def->get_fpardeflist();
-    std::map<std::string, ExprType> params;
+    std::vector<FparDef *> fpardeflist = col_def -> get_fpardeflist();
+    std::vector<std::pair<std::string, ExprType>> params;
 
     col_def -> sem_analyze();
 
     for(auto const &fpardef : fpardeflist) {
-      IdList *name_list = fpardef -> get_idlist();
-      std::vector<std::string> names = name_list->get_names();
+            IdList *name_list = fpardef -> get_idlist();
+            std::vector<std::string> names = name_list->get_names();
 
-      for (const auto &n : names) {
-        STEntry *entry = st.lookup(n);
-        params.insert({n, entry -> get_type()});
-      }
+            for (const auto &n : names) {
+            STEntry *entry = st.lookup(n);
+            params.push_back({n, entry -> get_type()});
+        }
     }
 
     switch(is_d_type->get_base_type()) {
@@ -405,7 +411,7 @@ void Header::sem_analyze() {
   else if(col_def) {
     col_def -> sem_analyze();
     std::vector<FparDef *> fpardeflist = col_def -> get_fpardeflist();
-    std::map<std::string, ExprType> params;
+    std::vector<std::pair<std::string, ExprType>> params;
     
     for (auto const &fpardef : fpardeflist) {
       IdList *name_list = fpardef -> get_idlist();
@@ -414,7 +420,7 @@ void Header::sem_analyze() {
       
       for (const auto &n : names) {
         STEntry *entry = st.lookup(n);
-        params.insert({n, entry->get_type()});
+        params.push_back({n, entry->get_type()});
       }
     
     }
@@ -534,59 +540,67 @@ LValue::~LValue() {
 void LValue::add(Expr *e) { list->append(e); }
 
 ExprType LValue::get_type() const {
-  return (id) ? id->get_type() : str->get_type();
+  return expr_type;
 }
 
 void LValue::printAST(std::ostream &out) const {
-  out << "LValue(";
-  if (id)
-    out << *id << ", ";
-  else
-    out << *str << ", ";
-  out << *list;
-  out << ")";
+    out << "LValue(";
+    if (id)
+        out << *id << ", ";
+    else
+        out << *str << ", ";
+    out << *list;
+    out << ")";
 }
 
 void LValue::sem_analyze() {
-  list->sem_analyze();
+    list -> sem_analyze();
 
-  STEntry *entry = nullptr;
+    STEntry *entry = nullptr;
 
-  if(id) {
-    id -> sem_analyze();
-    entry = st.lookup(id -> get_name());
+    if(id) {
+        id -> sem_analyze();
+        entry = st.lookup(id -> get_name());
+//        std::cout << "Lvalue's id name is " << id -> get_name() << std::endl;
 
-    if(!entry) printf("error id not found in lvalue");
+        std::vector<int> dims = entry -> get_dims();
 
-    expr_type = entry -> get_type();
+        std::vector<Expr *> e_list = list -> get_list();
 
-    std::vector<int> dims = entry -> get_dims();
+//        std::cout << "Lvalues expr list size is " << e_list.size() << std::endl;
+//        std::cout << "Lvalues entry list size is " << dims.size() << std::endl;
+        if(e_list.empty())
+            expr_type = id -> get_type();
+        else {
+            ExprType t = id -> get_type();
+//            std::cout << "Lvalue's id type is " << t << std::endl;
+            if(e_list.size() > entry -> get_dims().size()) {
+                std::cout << "Dimensions of dereferensing dont match" << std::endl;
+                return;  
+            }
+            else if(e_list.size() == entry -> get_dims().size()) {
 
-    std::vector<Expr *> e_list = list -> get_list();
-
-    if(dims.empty()) {
-        if(!e_list.empty())
-        printf("error in lvalue dims");
-    } 
-    else {
-        if(e_list.empty()) printf("error empty list in lvalue");
-
-        if(e_list.size() != entry->get_dims().size()) // maybe we do not need the entire expr list
-                                    // only its size - check later
-            printf("error not appropriate size on lvalue");
-
-        for (const auto &e : e_list) {
-        ExprType e_type = e -> get_type();
-            if(e_type == TYPE_BOOL || e_type == TYPE_BYTE_ARRAY || e_type == TYPE_INT_ARRAY) printf("error wrong type in lvalue");
+                switch(t) {
+                    case TYPE_BYTE_ARRAY:
+                        expr_type = TYPE_BYTE;
+                        break;
+                    case TYPE_INT_ARRAY:
+                        expr_type = TYPE_INT;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else {
+                expr_type = t;
+            }
         }
+    } 
+    
+    else {
+        str -> sem_analyze();
+        expr_type = TYPE_BYTE_ARRAY;
     }
-    expr_type = id -> get_type();
-  } 
-  
-  else {
-    str -> sem_analyze();
-    expr_type = TYPE_BYTE_ARRAY;
-  }
 }
 
 // --------- LOCAL DEF CLASS ---------
@@ -649,11 +663,12 @@ void FuncDef::printAST(std::ostream &out) const {
 }
 
 void FuncDef::sem_analyze() {
-  st.enterScope();
-  head -> sem_analyze();
-  if(def_list) def_list -> sem_analyze();
-  block -> sem_analyze();
-  st.exitScope();
+    head -> sem_analyze();
+    st.enterScope();
+    head -> sem_analyze();
+    if(def_list) def_list -> sem_analyze();
+    block -> sem_analyze();
+    st.exitScope();
 }
 
 // --------- VAR_DEF CLASS ---------
@@ -734,26 +749,30 @@ void ProcCall::printAST(std::ostream &out) const {
 
 void ProcCall::sem_analyze() {
     name -> sem_analyze();
-    col_expr -> sem_analyze();
+    if(col_expr) col_expr -> sem_analyze();
     
     STEntry *entry = st.lookup(name -> get_name());
-    if(!entry)
-        printf("error proc not defined");
 
-    std::vector<Expr *> expr_list = col_expr -> get_list();
-    if(entry -> get_params().size() != expr_list.size()) {
-        printf("error wrong dims of expressions in proc call");
-        return;
-    }
+    if(entry -> get_kind() != KIND_PROC)
+        printf("error not a proc");
 
-    int i = 0;
-    for(const auto &p : entry -> get_params()) {
-        if(p.second != expr_list[i] -> get_type()) {
-        std::cout << expr_list[i] -> get_type() << std::endl;
-        printf("error miss match of types in proc call");
-        return;
+    if(col_expr) {
+        std::vector<Expr *> expr_list = col_expr -> get_list();
+        if(entry -> get_params().size() != expr_list.size()) {
+            printf("error wrong dims of expressions in proc call");
+            return;
         }
-        ++i;
+
+        int i = 0;
+        for(const auto &p : entry -> get_params()) {
+            if(p.second != expr_list[i] -> get_type()) {
+                std::cout << "Our call values type is " << expr_list[i] -> get_type() << std::endl;
+                std::cout << "Definition's value type is " << p.second << std::endl;
+                std::cout << "error miss match of types in proc call " << name -> get_name() << "in parameter " << i << std::endl;
+                //return;
+            }
+            ++i;
+        }
     }
 }
 
@@ -774,32 +793,34 @@ void FuncCall::printAST(std::ostream &out) const {
 }
 
 void FuncCall::sem_analyze() {
-  name -> sem_analyze();
-  expr -> sem_analyze();
+    name -> sem_analyze();
+    if(expr) expr -> sem_analyze();
 
-  STEntry *entry = st.lookup(name -> get_name());
-  if (!entry)
-    printf("error func name not found");
+    std::cout << "I am calling function " << name->get_name() << std::endl;
 
-  if (entry -> get_kind() != KIND_FUNC)
-    printf("error not a func");
+    STEntry *entry = st.lookup(name -> get_name());
 
-  std::vector<Expr *> expr_list = expr -> get_list();
-  if (entry -> get_dims().size() != expr_list.size()) {
-    printf("error wrong size in func call");
-    return;
-  }
+    if(entry -> get_kind() != KIND_FUNC)
+        printf("error not a func");
 
-  int i = 0;
-  for (const auto &p : entry -> get_params()) {
-    if (p.second != expr_list[i] -> get_type()) {
-      printf("error wrong type in func call");
-      return;
+    if(expr) {
+        std::vector<Expr *> expr_list = expr -> get_list();
+        if(entry -> get_params().size() != expr_list.size()) {
+            printf("error wrong number of parameters in func call");
+            return;
+        }
+
+        int i = 0;
+        for (const auto &p : entry -> get_params()) {
+            if (p.second != expr_list[i] -> get_type()) {
+                printf("error wrong type in func call");
+                return;
+            }
+            ++i;
+        }
     }
-    ++i;
-  }
 
-  expr_type = entry -> get_type();
+    expr_type = entry -> get_type();
 }
 
 // --------- NOT_COND CLASS ---------
@@ -816,8 +837,8 @@ void NotCond::printAST(std::ostream &out) const {
 }
 
 void NotCond::sem_analyze() {
-  cond->check_type(TYPE_BOOL, TYPE_BOOL);
-  expr_type = TYPE_BOOL;
+    cond -> check_type(TYPE_BOOL, TYPE_BOOL);
+    expr_type = TYPE_BOOL;
 }
 
 // --------- BINOP CLASS ---------
@@ -927,20 +948,24 @@ void Skip::sem_analyze() { return; }
 Assign::Assign(LValue *l, Expr *e) : lvalue(l), expr(e) {}
 
 Assign::~Assign() {
-  if (lvalue)
-    delete lvalue;
-  if (expr)
-    delete expr;
+    if(lvalue)
+        delete lvalue;
+    if(expr)
+        delete expr;
 }
 
 void Assign::printAST(std::ostream &out) const {
-  out << "Assign(" << *lvalue << " := " << *expr << ")";
+    out << "Assign(" << *lvalue << " := " << *expr << ")";
 }
 
 void Assign::sem_analyze() {
-  lvalue->sem_analyze();
-  ExprType exp_type = lvalue->get_type();
-  expr->check_type(exp_type, exp_type);
+    lvalue -> sem_analyze();
+    ExprType exp_type = lvalue -> get_type(); 
+    if(exp_type == TYPE_BYTE_ARRAY || exp_type == TYPE_INT_ARRAY) {
+        std::cout << "Assign in arrays not allowed" << std::endl;
+        return;
+    }  
+    expr -> check_type(exp_type, exp_type);
 }
 
 // --------- EXIT CLASS ---------
