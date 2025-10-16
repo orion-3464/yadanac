@@ -47,7 +47,7 @@ inline std::ostream &operator<<(std::ostream &out, BaseType t) {
 
 class Expr : public AST {
 public:
-    Expr() = default;
+    Expr();
     Expr(const Expr& other);
     virtual ~Expr() = default;
 

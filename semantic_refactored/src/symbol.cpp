@@ -3,11 +3,11 @@
 
 // -------- STENTRY CLASS --------
 
-STEntry::STEntry(IdKind k) : kind(k) {}
-STEntry::STEntry(IdKind k, ExprType t) : kind(k), type(t) {}   //for simple ids
-STEntry::STEntry(IdKind k, const std::vector<std::pair<std::string, ExprType>> &p) : kind(k), params(p) {}   //for procs
-STEntry::STEntry(IdKind k, ExprType t, const std::vector<int>& s) : kind(k), type(t), size(s) {}   //for array ids & strings 
-STEntry::STEntry(IdKind k, ExprType t, const std::vector<std::pair<std::string, ExprType>> &p) : kind(k), type(t), params(p) {}  //for funcs
+STEntry::STEntry(IdKind k) : kind(k), type(VOID), size(), params() {}
+STEntry::STEntry(IdKind k, ExprType t) : kind(k), type(t), size(), params() {}   //for simple ids
+STEntry::STEntry(IdKind k, const std::vector<std::pair<std::string, ExprType>> &p) : kind(k), type(VOID), size(), params(p) {}   //for procs
+STEntry::STEntry(IdKind k, ExprType t, const std::vector<int>& s) : kind(k), type(t), size(s), params() {}   //for array ids & strings 
+STEntry::STEntry(IdKind k, ExprType t, const std::vector<std::pair<std::string, ExprType>> &p) : kind(k), type(t), size(), params(p) {}  //for funcs
 
 std::vector<std::pair<std::string, ExprType>> STEntry::get_params() {
     return params;

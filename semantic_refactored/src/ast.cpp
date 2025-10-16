@@ -4,6 +4,8 @@
 
 // -------- EXPR CLASS --------
 
+Expr::Expr() : expr_type(VOID) {}
+
 Expr::Expr(const Expr &other) : expr_type(other.expr_type) {}
 
 void Expr::check_type(ExprType expected_type1, ExprType expected_type2) {
@@ -554,7 +556,7 @@ void LValue::printAST(std::ostream &out) const {
 }
 
 void LValue::sem_analyze() {
-    list -> sem_analyze();
+    if(list) list -> sem_analyze();
 
     STEntry *entry = nullptr;
 
@@ -665,7 +667,6 @@ void FuncDef::printAST(std::ostream &out) const {
 void FuncDef::sem_analyze() {
     head -> sem_analyze();
     st.enterScope();
-    head -> sem_analyze();
     if(def_list) def_list -> sem_analyze();
     block -> sem_analyze();
     st.exitScope();
