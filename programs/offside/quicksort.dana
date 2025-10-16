@@ -1,4 +1,7 @@
 def main
+    var N is int
+    var nums is int 
+    var k is int[3]
 
     def partition is int: low high as int, arr as int []
         var pivot i temp j is int
@@ -7,7 +10,6 @@ def main
         j := low
 
         loop:
-        
             if j <= high-1:  break 
             if arr[j] < pivot:
             
@@ -24,7 +26,7 @@ def main
 	      #pivot bloop   
 
     def quicksort: low high as int, arr as int []
-        #var pivot is int
+        var pivot is int
         if low <= high:
             pivot := partition(low, high, arr)
             # recursion
@@ -32,11 +34,9 @@ def main
             quicksort: pivot+1, high, arr
    
  #abebablom 
-    var N is int
-    # N := readInteger()
+    N := readInteger()
     # Define the array of given length
-    var nums is int 
-    var k is int[3]
+    
        #slkfmg
     k := 0
 
