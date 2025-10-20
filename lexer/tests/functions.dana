@@ -1,6 +1,0 @@
-def p1
-def p2: n as int
-def p3: a b as int, c as ref byte
-def f1 is int: x as int
-def f2 is int: s as byte []
-def matrix_mult: a b c as int [10][10]

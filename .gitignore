@@ -2,32 +2,7 @@
 *.output
 dc
 
-lexer/lexer.cpp
-lexer/lexer
-
-parser/lexer.cpp
-parser/parser.cpp
-parser/parser.hpp
-parser/dc
-parser/*.o
-parser/parser.output
-
-parser-ast/lexer.cpp
-parser-ast/parser.cpp
-parser-ast/parser.hpp
-parser-ast/dc
-parser-ast/*.o
-parser-ast/parser.output
-
-semantic/lexer.cpp
-semantic/parser.cpp
-semantic/parser.hpp
-semantic/dc
-semantic/*.o
-semantic/parser.output
-
-semantic_refactored/build
-semantic_refactored/compile_commands.json
-semantic_refactored/.cache
+build/
+compile_commands.json
 
 .vscode/
