@@ -132,8 +132,6 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
     /* OFFSIDE RULE */
 ^{S}+(\n|\#|"(*") {
-                        //char *input = yytext;
-
                         for(int i=0; i < yyleng; ++i) {
                             if(yytext[i]=='(') {
                                 unput('*');
@@ -152,7 +150,6 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                    }
 
 ^{S}+               {   
-                        //char *input = yytext;
                         int spaces = 0;
                         
                         for(int i = 0; i < yyleng; i++) 
@@ -199,10 +196,6 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                                 yylloc->last_line = saved_line;
                                 yylloc->last_column = saved_column;
 
-                                printf("\033[0;33m");
-                                printf("\n Just put an auto-end on line %d or line %d \n", yylineno, num_lines);
-                                printf("\n Current identation level is %d and used case 1\n", current_indent);
-                                printf("\033[0m");
                                 return T_auto_end;
                             }
                             else if(current==current_indent){
@@ -213,10 +206,6 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                                 yylloc->last_line = saved_line;
                                 yylloc->last_column = saved_column;
 
-                                printf("\033[0;33m");
-                                printf("\n Just put an auto-end on line %d or line %d\n", yylineno, num_lines);
-                                printf("\n Current identation level is %d and used case 2\n", current_indent);
-                                printf("\033[0m");
                                 return T_auto_end;
                             }
 
@@ -245,10 +234,6 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                                 yylloc->last_line = saved_line;
                                 yylloc->last_column = saved_column;
 
-                                printf("\033[0;33m");
-                                printf("\n Just put an auto-end on line %d or line %d\n", yylineno, num_lines);
-                                printf("\n Current identation level is %d and used case 3\n", current_indent);
-                                printf("\033[0m");
                                 return T_auto_end;
                             }
                             
@@ -261,10 +246,8 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 <BEGIN_END><<EOF>>      yyterminate();
 
 <<EOF>> { 	
-            if(indent_stack.empty()){
-                printf("\033[1;32m");
-                printf("\n all done \n");
-                printf("\033[0m");
+            if(indent_stack.empty()) {
+                // all done
                 return T_eof;
             }
             indent_stack.pop();
@@ -279,11 +262,6 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
             yylloc->last_line = yyline;
             yylloc->last_column = yycolumn;
             
-            printf("\033[0;33m");
-            printf("\n Just put an auto-end on line %d or line %d \n", yylineno, num_lines);
-            printf("\n Current identation level is %d and used case 4\n", current_indent);
-            printf("\033[0m");
-
             return T_auto_end; 
 	 }
 
@@ -300,5 +278,10 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
     /* NOTHING MATCHED */
 
-.   { printf("\033[1;31m"); fprintf(stderr, "illegal token\n"); printf("\033[0m"); yyterminate(); }
+.   { 
+        printf("\033[1;31m"); 
+        fprintf(stderr, "Illegal token on line %d \n", yylineno); 
+        printf("\033[0m"); 
+        yyterminate(); 
+    }
 %%
