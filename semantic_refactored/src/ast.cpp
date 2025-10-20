@@ -12,9 +12,17 @@ void Expr::check_type(ExprType expected_type1, ExprType expected_type2)
 {
     sem_analyze();
 
-    if (expr_type != expected_type1 && expr_type != expected_type2)
+    ExprType expression_type;
+
+    // during type checking TYPE_BYTE and TYPE_BOOL are equivalent
+
+    if (expected_type1 == TYPE_BOOL) expected_type1 = TYPE_BYTE;
+    if (expected_type2 == TYPE_BOOL) expected_type2 = TYPE_BYTE;
+    (expr_type == TYPE_BOOL) ? expression_type = TYPE_BYTE : expression_type = expr_type;
+
+    if (expression_type != expected_type1 && expression_type != expected_type2)
     {
-        // std::cout << expected_type1 << " || " << expected_type2 << " - " << expr_type << std::endl;
+        std::cout << expected_type1 << " || " << expected_type2 << " - " << expression_type << std::endl;
         std::cout << "type_mismatch" << std::endl; // yyerror("type_mismatch"); TO DO
     }
 }
@@ -426,26 +434,37 @@ void Header::sem_analyze()
 {
     if (is_d_type)
         is_d_type->sem_analyze();
-
+        
     if (is_d_type && col_def)
     {
         std::vector<FparDef *> fpardeflist = col_def->get_fpardeflist();
         std::vector<std::pair<std::string, ExprType>> params;
-
-        col_def->sem_analyze();
-
+        
         for (auto const &fpardef : fpardeflist)
         {
             IdList *name_list = fpardef->get_idlist();
+            Type *param_type = fpardef->get_type(); 
+            
             std::vector<std::string> names = name_list->get_names();
-
+            std::vector<int> dimensions = param_type->get_dims();
+            BaseType b_type = param_type->get_base_type();
+            
+            ExprType expr_type;
+            if (dimensions.empty())
+            {
+                expr_type = (b_type == INT) ? TYPE_INT : TYPE_BYTE;
+            }
+            else
+            {
+                expr_type = (b_type == INT) ? TYPE_INT_ARRAY : TYPE_BYTE_ARRAY;
+            }
+            
             for (const auto &n : names)
             {
-                STEntry *entry = st.lookup(n);
-                params.push_back({n, entry->get_type()});
+                params.push_back({n, expr_type});
             }
         }
-
+        
         switch (is_d_type->get_base_type())
         {
         case INT:
@@ -455,8 +474,10 @@ void Header::sem_analyze()
             st.insert(name->get_name(), TYPE_BYTE, KIND_FUNC, {}, params);
             break;
         }
+        
+        st.enterScope();
+        col_def->sem_analyze();
     }
-
     else if (is_d_type)
     {
         switch (is_d_type->get_base_type())
@@ -469,28 +490,40 @@ void Header::sem_analyze()
             break;
         }
     }
-
     else if (col_def)
     {
-        col_def->sem_analyze();
         std::vector<FparDef *> fpardeflist = col_def->get_fpardeflist();
         std::vector<std::pair<std::string, ExprType>> params;
-
+        
         for (auto const &fpardef : fpardeflist)
         {
             IdList *name_list = fpardef->get_idlist();
-
+            Type *param_type = fpardef->get_type();
+            
             std::vector<std::string> names = name_list->get_names();
-
+            std::vector<int> dimensions = param_type->get_dims();
+            BaseType b_type = param_type->get_base_type();
+            
+            ExprType expr_type;
+            if (dimensions.empty())
+            {
+                expr_type = (b_type == INT) ? TYPE_INT : TYPE_BYTE;
+            }
+            else
+            {
+                expr_type = (b_type == INT) ? TYPE_INT_ARRAY : TYPE_BYTE_ARRAY;
+            }
+            
             for (const auto &n : names)
             {
-                STEntry *entry = st.lookup(n);
-                params.push_back({n, entry->get_type()});
+                params.push_back({n, expr_type});
             }
         }
+        
         st.insert(name->get_name(), VOID, KIND_PROC, {}, params);
+        st.enterScope();
+        col_def->sem_analyze();
     }
-
     else
     {
         st.insert(name->get_name(), VOID, KIND_PROC, {}, {});
@@ -760,7 +793,6 @@ void FuncDef::printAST(std::ostream &out) const
 void FuncDef::sem_analyze()
 {
     head->sem_analyze();
-    st.enterScope();
     if (def_list)
         def_list->sem_analyze();
     block->sem_analyze();

@@ -3,7 +3,7 @@
 
 #include "parser.hpp"
 
-int yylex( YYSTYPE* lvalp, YYLTYPE* llocp );
-void yyerror ( YYLTYPE *locp, const char *msg );
+int yylex(YYSTYPE *lvalp, YYLTYPE *llocp);
+void yyerror(YYLTYPE *locp, const char *msg);
 
 #endif /* __LEXER_H__ */
