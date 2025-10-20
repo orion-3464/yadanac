@@ -239,7 +239,7 @@ proc_call   : T_id one_col_expr { $$ = new ProcCall(new Id(*$1), $2); delete $1;
             ;
 
 one_col_expr    : %empty 			 { $$ = nullptr; } 
-                | ":" expr expr_list {$3->prepend($2); $$ = new OneColExpr($3);}  
+                | ":" expr expr_list {$3->prepend($2); $$ = new OneColExpr($3); }  
                 ;
 
 expr_list   : %empty 			 { $$ = new ExprList(); }
@@ -256,14 +256,14 @@ one_expr    : %empty 		 { $$ = nullptr; }
 cond    : expr						{ $$ = $1; }
         | '(' cond ')'				{ $$ = $2; }
         | "not" cond %prec UNOTNOT	{ $$ = new NotCond($2); }
-        | cond "and" cond			{ $$ = new BinOpCond($1, $2, $3);  }
-        | cond "or" cond			{ $$ = new BinOpCond($1, $2, $3);  }
-        | expr '=' expr				{ $$ = new BinOpExpr($1, $2, $3);  } // may fix the leak     
-        | expr "<>" expr			{ $$ = new BinOpExpr($1, $2, $3);  }
-        | expr '<' expr				{ $$ = new BinOpExpr($1, $2, $3);  } // may fix the leak
-        | expr '>' expr				{ $$ = new BinOpExpr($1, $2, $3);  } // may fix the leak
-        | expr "<=" expr			{ $$ = new BinOpExpr($1, $2, $3);  }
-        | expr ">=" expr			{ $$ = new BinOpExpr($1, $2, $3);  }
+        | cond "and" cond			{ $$ = new BinOpCond($1, $2, $3); }
+        | cond "or" cond			{ $$ = new BinOpCond($1, $2, $3); }
+        | expr '=' expr				{ $$ = new BinOpExpr($1, $2, $3); } 
+        | expr "<>" expr			{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr '<' expr				{ $$ = new BinOpExpr($1, $2, $3); } 
+        | expr '>' expr				{ $$ = new BinOpExpr($1, $2, $3); } 
+        | expr "<=" expr			{ $$ = new BinOpExpr($1, $2, $3); }
+        | expr ">=" expr			{ $$ = new BinOpExpr($1, $2, $3); }
         ;
 
 %%

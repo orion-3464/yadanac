@@ -35,10 +35,12 @@ Block::Block() : stmt_list() {}
 
 Block::~Block()
 {
-    if (!stmt_list.empty())
+    if (!stmt_list.empty()) {
         for (auto stmt : stmt_list)
             if (stmt)
                 delete stmt;
+        stmt_list.clear();
+    }
 }
 
 void Block::set_auto_end(bool auto_end) { has_auto_end = auto_end; }
@@ -112,6 +114,8 @@ BracketList::~BracketList()
     for (auto b : b_list)
         if (b)
             delete b;
+
+    b_list.clear();
 }
 
 std::vector<int> BracketList::get_sizes() const
@@ -174,6 +178,8 @@ Type::~Type()
 {
     if (bracket_list)
         delete bracket_list;
+    
+    bracket_list = nullptr;
 }
 
 std::vector<int> Type::get_dims() const
@@ -302,6 +308,8 @@ FparDef::~FparDef()
         delete name_list;
     if (type)
         delete type;
+    name_list = nullptr;
+    type = nullptr;
 }
 
 IdList *FparDef::get_idlist() const { return name_list; }
@@ -359,7 +367,13 @@ void FparDef::sem_analyze()
 
 // -------- COLFPARDEF CLASS --------
 
-ColFparDef::ColFparDef(FparDefList *f) { def_list = f->get_fpardeflist(); }
+ColFparDef::ColFparDef(FparDefList *f) { 
+    if (f) {
+        def_list = std::move(f->def_list);
+        f->def_list.clear();
+        delete f;
+    }
+}
 
 void ColFparDef::printAST(std::ostream &out) const
 {
@@ -377,6 +391,7 @@ FparDefList::~FparDefList()
     for (auto d : def_list)
         if (d)
             delete d;
+    def_list.clear();
 }
 
 void FparDefList::append(FparDef *d) { def_list.push_back(d); }
@@ -410,8 +425,7 @@ void FparDefList::sem_analyze()
 
 // ----------- HEADER CLASS -----------
 
-Header::Header(Id *s, IsDataType *d, ColFparDef *c)
-    : name(s), is_d_type(d), col_def(c) {}
+Header::Header(Id *s, IsDataType *d, ColFparDef *c) : name(s), is_d_type(d), col_def(c) {}
 
 Header::~Header()
 {
@@ -420,6 +434,9 @@ Header::~Header()
         delete is_d_type;
     if (col_def)
         delete col_def;
+    name = nullptr;
+    is_d_type = nullptr;
+    col_def = nullptr;
 }
 
 void Header::printAST(std::ostream &out) const
@@ -562,7 +579,13 @@ void Label::sem_analyze()
 
 // --------- ONECOLEXPR CLASS ---------
 
-OneColExpr::OneColExpr(ExprList *e) : ExprList(*e) {}
+OneColExpr::OneColExpr(ExprList *e) : ExprList() {
+    if (e) {
+        expr_list = std::move(e->expr_list);
+        e->expr_list.clear();
+        delete e;
+    }
+}
 
 void OneColExpr::printAST(std::ostream &out) const
 {
@@ -584,6 +607,7 @@ ExprList::~ExprList()
         for (auto expr : expr_list)
             if (expr)
                 delete expr;
+        expr_list.clear();
 }
 
 void ExprList::append(Expr *e) { expr_list.push_back(e); }
@@ -643,6 +667,9 @@ LValue::~LValue()
         delete str;
     if (list)
         delete list;
+    id = nullptr;
+    str = nullptr;
+    list = nullptr;
 }
 
 void LValue::add(Expr *e) { list->append(e); }
@@ -783,6 +810,9 @@ FuncDef::~FuncDef()
         delete def_list;
     if (block)
         delete block;
+    head = nullptr;
+    def_list = nullptr;
+    block = nullptr;
 }
 
 void FuncDef::printAST(std::ostream &out) const
@@ -809,6 +839,8 @@ VarDef::~VarDef()
         delete type;
     if (names)
         delete names;
+    type = nullptr;
+    names = nullptr;
 }
 
 void VarDef::printAST(std::ostream &out) const
@@ -881,6 +913,8 @@ ProcCall::~ProcCall()
         delete name;
     if (col_expr)
         delete col_expr;
+    name = nullptr;
+    col_expr = nullptr;
 }
 
 void ProcCall::printAST(std::ostream &out) const

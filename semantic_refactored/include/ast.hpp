@@ -94,6 +94,7 @@ protected:
 class LocalDef : public AST
 {
 public:
+    virtual ~LocalDef() = default;
     DefType get_type() const;
 
 protected:
@@ -259,6 +260,8 @@ public:
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
 
+    friend class ColFparDef;
+
 protected:
     std::vector<FparDef *> def_list;
 };
@@ -323,6 +326,8 @@ public:
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
+    friend class OneColExpr;
 
 protected:
     std::vector<Expr *> expr_list;
