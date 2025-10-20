@@ -6,105 +6,124 @@
 #include <iostream>
 #include "symbol.hpp"
 
-enum BaseType {
+enum BaseType
+{
     INT,
     BYTE
 };
 
-enum DefType {
+enum DefType
+{
     FUNC_DEF,
     FUNC_DECL,
     VAR_DEF
 };
 
-class AST {
-	public:
+class AST
+{
+public:
     AST() = default;
     virtual ~AST() = default;
 
-	virtual void printAST(std::ostream &out) const = 0;
+    virtual void printAST(std::ostream &out) const = 0;
     virtual void sem_analyze() = 0;
 };
-	
+
 // -------- OUT OPERATORS --------
 
-inline std::ostream &operator<<(std::ostream &out, const AST &ast) {
-	ast.printAST(out);
-	return out;
+inline std::ostream &operator<<(std::ostream &out, const AST &ast)
+{
+    ast.printAST(out);
+    return out;
 }
 
-inline std::ostream &operator<<(std::ostream &out, BaseType t) {
-  switch (t) {
-    case INT: out << "int"; break;
+inline std::ostream &operator<<(std::ostream &out, BaseType t)
+{
+    switch (t)
+    {
+    case INT:
+        out << "int";
+        break;
 
-    case BYTE: out << "byte"; break;
+    case BYTE:
+        out << "byte";
+        break;
 
-    default: break;
-
-  }
-  return out;
+    default:
+        break;
+    }
+    return out;
 }
 
-class Expr : public AST {
+class Expr : public AST
+{
 public:
     Expr();
-    Expr(const Expr& other);
+    Expr(const Expr &other);
     virtual ~Expr() = default;
 
     ExprType get_type() const;
     void check_type(ExprType expected_type1, ExprType expected_type2);
+
 protected:
     ExprType expr_type;
 };
 
-class Stmt : public AST {
+class Stmt : public AST
+{
 public:
     Stmt() = default;
     virtual ~Stmt() = default;
 };
 
-class DataType : public AST {
+class DataType : public AST
+{
 public:
     DataType(BaseType t);
-    DataType(const DataType& other);  
+    DataType(const DataType &other);
 
     BaseType get_base_type() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 protected:
     BaseType type;
 };
 
-class LocalDef : public AST {
+class LocalDef : public AST
+{
 public:
     DefType get_type() const;
+
 protected:
     DefType def_type;
 };
 
-
-class Cond : public Expr {
+class Cond : public Expr
+{
 };
 
-
-class Block : public Stmt {     // Blocks are statement lists
+class Block : public Stmt
+{ // Blocks are statement lists
 public:
     Block();
     ~Block() override;
 
     void set_auto_end(bool auto_end);
-	void append(Stmt *s);
+    void append(Stmt *s);
     bool empty() const;
 
     virtual void printAST(std::ostream &out) const override;
-	void sem_analyze() override;
+    void sem_analyze() override;
+
 private:
     std::vector<Stmt *> stmt_list;
     bool has_auto_end;
 };
 
-class Const : public Expr {
+class Const : public Expr
+{
 public:
     Const();
     Const(int n);
@@ -114,13 +133,15 @@ public:
     int isempty();
 
     void printAST(std::ostream &out) const override;
-	void sem_analyze() override;
+    void sem_analyze() override;
+
 private:
     int num;
     int empty = 0;
 };
 
-class BracketList : public Const {      // Bracket lists are const lists
+class BracketList : public Const
+{ // Bracket lists are const lists
 public:
     BracketList();
     ~BracketList() override;
@@ -130,26 +151,30 @@ public:
     void append(Const *c);
     void prepend(Const *c);
 
-    void printAST(std::ostream &out) const override ;
+    void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     std::vector<Const *> b_list;
 };
 
-class Type : public DataType {
+class Type : public DataType
+{
 public:
     Type(DataType *t, BracketList *c);
     ~Type() override;
 
     std::vector<int> get_dims() const;
 
-	void printAST(std::ostream &out) const override;
+    void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 protected:
-	BracketList *bracket_list;
+    BracketList *bracket_list;
 };
 
-class ArrayPar : public Type {
+class ArrayPar : public Type
+{
 public:
     ArrayPar(DataType *t, BracketList *c);
 
@@ -157,7 +182,8 @@ public:
     void sem_analyze() override;
 };
 
-class RefPar : public Type {
+class RefPar : public Type
+{
 public:
     RefPar(DataType *t);
     ~RefPar() override;
@@ -166,7 +192,8 @@ public:
     void sem_analyze() override;
 };
 
-class Id : public Expr {
+class Id : public Expr
+{
 public:
     Id();
     Id(std::string s);
@@ -175,16 +202,18 @@ public:
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     std::string name;
 };
 
-class IdList : public Id {
+class IdList : public Id
+{
 public:
     IdList();
     ~IdList() override;
-    
-	void append(Id *i);
+
+    void append(Id *i);
     void prepend(Id *i);
     bool empty() const;
 
@@ -192,50 +221,57 @@ public:
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     std::vector<Id *> id_list;
 };
 
-class FparDef : public AST {
+class FparDef : public AST
+{
 public:
-	FparDef(); 
+    FparDef();
     FparDef(const FparDef &other);
     FparDef(IdList *i, Type *t);
     ~FparDef() override;
 
-    IdList * get_idlist() const;
-    Type* get_type() const;
+    IdList *get_idlist() const;
+    Type *get_type() const;
 
     void printAST(std::ostream &out) const override;
-	void sem_analyze() override;
+    void sem_analyze() override;
+
 private:
     IdList *name_list;
     Type *type;
 };
 
-class FparDefList : public FparDef {
+class FparDefList : public FparDef
+{
 public:
     FparDefList();
     ~FparDefList() override;
-	
-	void append(FparDef *d);
+
+    void append(FparDef *d);
     void prepend(FparDef *d);
     bool empty() const;
-    std::vector<FparDef *> get_fpardeflist() const; 
+    std::vector<FparDef *> get_fpardeflist() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 protected:
     std::vector<FparDef *> def_list;
 };
-class ColFparDef : public FparDefList { 
+class ColFparDef : public FparDefList
+{
 public:
     ColFparDef(FparDefList *f);
-	
+
     void printAST(std::ostream &out) const override;
 };
 
-class IsDataType : public DataType {
+class IsDataType : public DataType
+{
 public:
     IsDataType(DataType *t);
 
@@ -243,34 +279,38 @@ public:
     void sem_analyze() override;
 };
 
-class Header : public AST {
+class Header : public AST
+{
 public:
     Header(Id *s, IsDataType *d, ColFparDef *c);
     ~Header() override;
 
     void printAST(std::ostream &out) const override;
-	void sem_analyze() override;
+    void sem_analyze() override;
+
 private:
     Id *name;
     IsDataType *is_d_type;
     ColFparDef *col_def;
 };
 
-class Label : public Id {
+class Label : public Id
+{
 public:
     Label(Id *i);
     ~Label() override;
-	
-    Id * get_id() const;
+
+    Id *get_id() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
-    
+
 private:
     Id *name;
 };
 
-class ExprList : public Expr {
+class ExprList : public Expr
+{
 public:
     ExprList();
     ExprList(const ExprList &other);
@@ -282,191 +322,222 @@ public:
     std::vector<Expr *> get_list() const;
 
     void printAST(std::ostream &out) const override;
-	void sem_analyze() override;
+    void sem_analyze() override;
+
 protected:
     std::vector<Expr *> expr_list;
 };
 
-class OneColExpr : public ExprList {
+class OneColExpr : public ExprList
+{
 public:
     OneColExpr(ExprList *e);
 
     void printAST(std::ostream &out) const override;
 };
 
-class Char : public Expr {
+class Char : public Expr
+{
 public:
     Char(char c);
 
-	void printAST(std::ostream &out) const override;
+    void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     char ch;
 };
 
-class Str : public Expr {
+class Str : public Expr
+{
 public:
     Str(std::string s);
-    
+
     std::string get_string() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     std::string val;
 };
 
-class LValue : public Expr {
+class LValue : public Expr
+{
 public:
-    LValue(Id* i, Str *str, ExprList *e);
+    LValue(Id *i, Str *str, ExprList *e);
     ~LValue() override;
-    
-	void add(Expr *e);
+
+    void add(Expr *e);
     ExprType get_type() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     Id *id;
     Str *str;
     ExprList *list;
 };
 
-class LocalDefList : public LocalDef {
+class LocalDefList : public LocalDef
+{
 public:
     LocalDefList();
     ~LocalDefList() override;
-    
-	void append(LocalDef *d);
+
+    void append(LocalDef *d);
     void prepend(LocalDef *d);
     bool empty() const;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
-	std::vector<LocalDef *> def_list;
+    std::vector<LocalDef *> def_list;
 };
 
-class FuncDef : public LocalDef {
+class FuncDef : public LocalDef
+{
 public:
-	FuncDef(Header *h, LocalDef *l, Block *b);
+    FuncDef(Header *h, LocalDef *l, Block *b);
     virtual ~FuncDef() override;
 
-	void printAST(std::ostream &out) const override;
+    void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     Header *head;
     LocalDef *def_list;
     Block *block;
 };
 
-class VarDef : public LocalDef {
+class VarDef : public LocalDef
+{
 public:
-	VarDef(IdList  *i, Type *t);    
+    VarDef(IdList *i, Type *t);
     ~VarDef() override;
 
-	void printAST(std::ostream &out) const override;
-	void sem_analyze() override;
+    void printAST(std::ostream &out) const override;
+    void sem_analyze() override;
+
 private:
-	Type *type;
-	IdList *names;
+    Type *type;
+    IdList *names;
 };
 
-class FuncDecl : public LocalDef {
+class FuncDecl : public LocalDef
+{
 public:
     FuncDecl(Header *h);
     ~FuncDecl() override;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     Header *header;
 };
 
-class ProcCall : public Stmt {
+class ProcCall : public Stmt
+{
 public:
     ProcCall(Id *i, ExprList *e);
     ~ProcCall() override;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     Id *name;
     ExprList *col_expr;
 };
 
-class FuncCall : public Expr {
+class FuncCall : public Expr
+{
 public:
     FuncCall(Id *i, ExprList *e);
     ~FuncCall() override;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     Id *name;
     ExprList *expr;
 };
 
-class NotCond : public Cond {
+class NotCond : public Cond
+{
 public:
     NotCond(Expr *c);
     ~NotCond() override;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     Expr *cond;
 };
 
-class BinOpCond : public Cond {
+class BinOpCond : public Cond
+{
 public:
     BinOpCond(Expr *c1, std::string *o, Expr *c2);
     ~BinOpCond() override;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     Expr *cond1;
-	std::string op;
-	Expr *cond2;
+    std::string op;
+    Expr *cond2;
 };
 
-class UnaryOpExpr : public Expr {
+class UnaryOpExpr : public Expr
+{
 public:
-  	UnaryOpExpr(std::string *o, Expr *e);
+    UnaryOpExpr(std::string *o, Expr *e);
     ~UnaryOpExpr() override;
 
-  	void printAST(std::ostream &out) const override;
+    void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     std::string op;
-  	Expr *expr;
+    Expr *expr;
 };
 
-class BinOpExpr : public Expr {
+class BinOpExpr : public Expr
+{
 public:
-  	BinOpExpr(Expr *e1, std::string *o, Expr *e2);
+    BinOpExpr(Expr *e1, std::string *o, Expr *e2);
     ~BinOpExpr() override;
 
-  	void printAST(std::ostream &out) const override;
+    void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
-  	Expr *expr1;
-  	std::string op;
-  	Expr *expr2;
+    Expr *expr1;
+    std::string op;
+    Expr *expr2;
 };
 
-class BoolVal : public Expr {
+class BoolVal : public Expr
+{
 public:
     BoolVal(char bv);
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     char boolval;
 };
 
-class Skip : public Stmt {
+class Skip : public Stmt
+{
 public:
     Skip();
 
@@ -474,19 +545,22 @@ public:
     void sem_analyze() override;
 };
 
-class Assign : public Stmt {
+class Assign : public Stmt
+{
 public:
     Assign(LValue *l, Expr *e);
     ~Assign() override;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     LValue *lvalue;
     Expr *expr;
 };
 
-class Exit : public Stmt { 
+class Exit : public Stmt
+{
 public:
     Exit();
 
@@ -494,46 +568,54 @@ public:
     void sem_analyze() override;
 };
 
-class Break : public Stmt {
+class Break : public Stmt
+{
 public:
     Break(Label *c);
     ~Break() override;
 
     void printAST(std::ostream &out) const override;
-	void sem_analyze() override;
+    void sem_analyze() override;
+
 private:
     Label *col_id;
 };
 
-class Continue : public Stmt {
+class Continue : public Stmt
+{
 public:
     Continue(Label *c);
     ~Continue() override;
 
     void printAST(std::ostream &out) const override;
-	void sem_analyze() override;
+    void sem_analyze() override;
+
 private:
     Label *col_id;
 };
 
-class Return : public Stmt {
+class Return : public Stmt
+{
 public:
     Return(Expr *e);
     ~Return() override;
-    
+
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
-private: 
+
+private:
     Expr *expr;
 };
 
-class IfThenElse : public Stmt {
+class IfThenElse : public Stmt
+{
 public:
     IfThenElse(Expr *c, Block *b, Stmt *ef, Stmt *e);
     ~IfThenElse() override;
 
     void printAST(std::ostream &out) const override;
-	void sem_analyze() override;
+    void sem_analyze() override;
+
 private:
     Expr *cond;
     Block *block;
@@ -541,7 +623,8 @@ private:
     Stmt *els;
 };
 
-class Elif : public Stmt {
+class Elif : public Stmt
+{
 public:
     Elif();
     Elif(Expr *c, Block *b);
@@ -549,12 +632,14 @@ public:
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     Expr *cond;
-	Block *block;
+    Block *block;
 };
 
-class ElifList : public Elif {
+class ElifList : public Elif
+{
 public:
     ElifList();
     ~ElifList() override;
@@ -562,28 +647,33 @@ public:
     void append(Stmt *e);
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     std::vector<Stmt *> elif_list;
 };
 
-class Else : public Stmt {
+class Else : public Stmt
+{
 public:
     Else(Block *b);
     ~Else() override;
 
     void printAST(std::ostream &out) const override;
     void sem_analyze() override;
+
 private:
     Block *block;
 };
 
-class Loop : public Stmt {
+class Loop : public Stmt
+{
 public:
     Loop(Id *i, Block *b);
     ~Loop() override;
 
     void printAST(std::ostream &out) const override;
-	void sem_analyze() override;
+    void sem_analyze() override;
+
 private:
     Id *name;
     Block *block;
