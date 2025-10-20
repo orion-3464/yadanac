@@ -269,8 +269,20 @@ cond    : expr						{ $$ = $1; }
 %%
 
 void yyerror(YYLTYPE *locp, const char *msg) {
-	printf("Syntax error: %s\n at line %d\n", msg, locp->last_line);
-	//exit(42);
+    if (locp && locp->first_line > 0) {
+        if (locp->first_line == locp->last_line && locp->first_column == locp->last_column) {
+            fprintf(stderr, "\033[1;31mError at line %d, column %d: %s\033[0m\n", 
+                    locp->first_line, locp->first_column, msg);
+        } else if (locp->first_line == locp->last_line) {
+            fprintf(stderr, "\033[1;31mError at line %d, columns %d-%d: %s\033[0m\n", 
+                    locp->first_line, locp->first_column, locp->last_column, msg);
+        } else {
+            fprintf(stderr, "\033[1;31mError from line %d, column %d to line %d, column %d: %s\033[0m\n", 
+                    locp->first_line, locp->first_column, locp->last_line, locp->last_column, msg);
+        }
+    } else {
+        fprintf(stderr, "\033[1;31mError: %s\033[0m\n", msg);
+    }
 }
 
 int main(int argc, char* argv[]) {

@@ -12,6 +12,24 @@
 
 #define T_eof   0
 
+int yyline = 1;
+int yycolumn = 1;
+
+#define YY_USER_ACTION                              \
+    do {                                            \
+        yylloc->first_line = yylloc->last_line;     \
+        yylloc->first_column = yylloc->last_column; \
+        for (int i = 0; i < yyleng; i++) {          \
+            if (yytext[i] == '\n') {                \
+                yylloc->last_line++;                \
+                yylloc->last_column = 0;            \
+            } else {                                \
+                yylloc->last_column++;              \
+            }                                       \
+        }                                           \
+    } while(0);
+
+
 /*helper function for block-style detection*/
 int block_style = 0; 
 
@@ -62,7 +80,12 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 %%
 	if(block_style==1)BEGIN(BEGIN_END);
 
-\n          { if(!count)++num_lines; count=0; }
+\n          {   
+                yylloc->last_line++;
+                yylloc->last_column = 0;
+                if(!count)++num_lines; 
+                count=0; 
+            }
     
 "and"       { yylval->op = new std::string(yytext); return T_and; } 
 "as"        return T_as;
@@ -134,7 +157,10 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                         
                         for(int i = 0; i < yyleng; i++) 
                             spaces += (yytext[i] == '\t') ? TAB_LEN : 1;      
-            
+                        
+                        int saved_line = yyline;
+                        int saved_column = yycolumn;    
+
                         current_indent = spaces;
                         int current_level = (!indent_stack.empty()) ? indent_stack.top() : 0;
                         
@@ -161,9 +187,18 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                 
                             if(current>current_indent) {
                                 yyless(0);
+                                // restore location after yyless(0)
+                                yyline = saved_line;
+                                yycolumn = saved_column;
                                 unput('\n');
                                 count=1;
                                 ++at_no;
+
+                                yylloc->first_line = saved_line;
+                                yylloc->first_column = saved_column;
+                                yylloc->last_line = saved_line;
+                                yylloc->last_column = saved_column;
+
                                 printf("\033[0;33m");
                                 printf("\n Just put an auto-end on line %d or line %d \n", yylineno, num_lines);
                                 printf("\n Current identation level is %d and used case 1\n", current_indent);
@@ -172,6 +207,12 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                             }
                             else if(current==current_indent){
                                 ++at_no;
+
+                                yylloc->first_line = saved_line;
+                                yylloc->first_column = saved_column;
+                                yylloc->last_line = saved_line;
+                                yylloc->last_column = saved_column;
+
                                 printf("\033[0;33m");
                                 printf("\n Just put an auto-end on line %d or line %d\n", yylineno, num_lines);
                                 printf("\n Current identation level is %d and used case 2\n", current_indent);
@@ -189,11 +230,21 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                             if(YY_START == DRIVER) {	
                                 if(current_indent<current_level) {
                                     yyless(0);
+
+                                    yyline = saved_line;
+                                    yycolumn = saved_column;      
+
                                     unput('\n');
                                     count=1;
                                 }
                                 BEGIN(INITIAL);
                                 ++at_no;
+
+                                yylloc->first_line = saved_line;
+                                yylloc->first_column = saved_column;
+                                yylloc->last_line = saved_line;
+                                yylloc->last_column = saved_column;
+
                                 printf("\033[0;33m");
                                 printf("\n Just put an auto-end on line %d or line %d\n", yylineno, num_lines);
                                 printf("\n Current identation level is %d and used case 3\n", current_indent);
@@ -222,6 +273,11 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                 yyless(0);
             }
             ++at_no;
+
+            yylloc->first_line = yyline;
+            yylloc->first_column = yycolumn;
+            yylloc->last_line = yyline;
+            yylloc->last_column = yycolumn;
             
             printf("\033[0;33m");
             printf("\n Just put an auto-end on line %d or line %d \n", yylineno, num_lines);
