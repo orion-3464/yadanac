@@ -46,6 +46,8 @@ void Scope::insert(std::string name, ExprType type, IdKind kind, const std::vect
         // yyerror("Duplicate variable declaration");
     }
 
+    order.push_back(name);
+
     switch (kind)
     {
     case KIND_ID:
@@ -77,7 +79,9 @@ STEntry *Scope::lookup(std::string n)
 
 ExprType Scope::get_ret_type()
 {
-    STEntry e = locals.begin()->second;
+    std::string name=order[0];
+    STEntry e = locals[name];
+	std::cout<<"The id you are taking the return type from is "<<name<<std::endl;
     return e.get_type();
 }
 

@@ -3,6 +3,7 @@ def main
   def maxRotateFunction is int: n as int, nums as int []
 
     var sum prevF maxF i is int
+	var F is int
     sum := 0
     prevF := 0
     maxF := 0
@@ -21,7 +22,6 @@ def main
 
     loop:
       if i < n:
-        var F is int
         F := prevF + sum - n * nums[n-i]
         if F > maxF: maxF := F
         prevF := F
@@ -30,11 +30,13 @@ def main
 
     return: maxF
   var n is int
-  n := readInteger()
   
   var nums is int [3]
 
   var i is int
+  var result is int
+
+  n := readInteger()
   i := 0
   loop:
     if i < n:
@@ -42,7 +44,6 @@ def main
       i := i + 1
     else: break
 
-  var result is int
   result := maxRotateFunction(n, nums)
 
   writeInteger: result

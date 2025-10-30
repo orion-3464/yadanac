@@ -56,6 +56,7 @@ public:
 
 private:
     std::map<std::string, STEntry> locals;
+    std::vector<std::string> order;
 };
 
 class SymbolTable

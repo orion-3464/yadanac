@@ -1,7 +1,10 @@
 def main
     var N is int
-    var nums is int 
-    var k is int[3]
+    var nums is int [4] 
+    var k is int
+	var i is int
+	var n is int
+	var x is int[50]
 
     def partition is int: low high as int, arr as int []
         var pivot i temp j is int

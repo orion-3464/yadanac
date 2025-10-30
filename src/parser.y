@@ -287,7 +287,7 @@ void yyerror(YYLTYPE *locp, const char *msg) {
 
 int main(int argc, char* argv[]) {
     extern FILE *yyin;
-    extern int block_style;
+    //extern int block_style;
     void detect_block_style(FILE *);
     
     FILE* f = nullptr;
@@ -303,11 +303,6 @@ int main(int argc, char* argv[]) {
     yyin = f;
 
     detect_block_style(yyin);
-
-    printf("Using %s%s%s syntax.\n",
-       block_style == 1 ? "\033[0;33m" : "\033[0;34m",
-       block_style == 1 ? "block-delimiter" : "indentation",
-       "\033[0m");
 
 	int res = yyparse();
 

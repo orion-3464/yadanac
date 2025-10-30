@@ -486,13 +486,16 @@ void Header::sem_analyze()
         {
         case INT:
             st.insert(name->get_name(), TYPE_INT, KIND_FUNC, {}, params);
+			st.enterScope();
+			st.insert(name->get_name(), TYPE_INT, KIND_FUNC, {}, params);
             break;
         case BYTE:
             st.insert(name->get_name(), TYPE_BYTE, KIND_FUNC, {}, params);
+			st.enterScope();
+			st.insert(name->get_name(), TYPE_BYTE, KIND_FUNC, {}, params);
             break;
         }
         
-        st.enterScope();
         col_def->sem_analyze();
     }
     else if (is_d_type)
@@ -501,9 +504,13 @@ void Header::sem_analyze()
         {
         case INT:
             st.insert(name->get_name(), TYPE_INT, KIND_FUNC, {}, {});
+			st.enterScope();
+			st.insert(name->get_name(), TYPE_INT, KIND_FUNC, {}, {});
             break;
         case BYTE:
             st.insert(name->get_name(), TYPE_BYTE, KIND_FUNC, {}, {});
+			st.enterScope();
+			st.insert(name->get_name(), TYPE_BYTE, KIND_FUNC, {}, {});
             break;
         }
     }
@@ -539,17 +546,22 @@ void Header::sem_analyze()
         
         st.insert(name->get_name(), VOID, KIND_PROC, {}, params);
         st.enterScope();
+        st.insert(name->get_name(), VOID, KIND_PROC, {}, params);
         col_def->sem_analyze();
     }
     else
     {
         st.insert(name->get_name(), VOID, KIND_PROC, {}, {});
+		st.enterScope();
+		st.insert(name->get_name(), VOID, KIND_PROC, {}, {});
     }
 }
 
 // --------- IS DATA_TYPE CLASS ---------
 
-IsDataType::IsDataType(DataType *t) : DataType(*t) {}
+IsDataType::IsDataType(DataType *t) : DataType(*t) {
+    delete t;  
+}
 
 void IsDataType::printAST(std::ostream &out) const
 {
@@ -1123,9 +1135,12 @@ void BinOpExpr::sem_analyze()
 
     ExprType expr1_type = expr1->get_type();
     ExprType expr2_type = expr2->get_type();
-    if (expr1_type != expr2_type)
-        printf("INCOMPATIBLE TYPES"); // RAISE ERROR
-
+    if(expr1_type == TYPE_BOOL) expr1_type = TYPE_BYTE;
+    if(expr2_type == TYPE_BOOL) expr2_type = TYPE_BYTE;
+    if (expr1_type != expr2_type) {
+        std::cout<<"INCOMPATIBLE TYPES where expr1 is "<<*expr1<<" with type "<<expr1_type<<std::endl;
+        std::cout<<"and expr 2 is "<<*expr2<<" with type "<<expr2_type<<std::endl; // RAISE ERROR
+    }
     if (op == "+" || op == "-" || op == "/" || op == "*" || op == "%" ||
         op == "&" || op == "|")
         expr_type = expr1_type;
@@ -1179,6 +1194,7 @@ void Assign::sem_analyze()
         return;
     }
     expr->check_type(exp_type, exp_type);
+    std::cout<<"Checking types in assign"<<" value 1: "<<*lvalue<<" with type: "<<exp_type<<" value 2: "<<*expr<<" with type: "<<expr->get_type()<<std::endl;
 }
 
 // --------- EXIT CLASS ---------
@@ -1247,6 +1263,7 @@ void Return::sem_analyze()
 {
     ExprType def_type = st.get_def();
     expr->check_type(def_type, def_type);
+    std::cout<<"Return Type must be "<<def_type<<" and it is "<<expr->get_type()<<std::endl;
 }
 
 // --------- IFTHENELSE CLASS ---------
