@@ -136,6 +136,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                             if(yytext[i]=='(') {
                                 unput('*');
                                 unput('(');
+                                yyless(0);
                                 break;
                             }
                             else if(yytext[i]=='#'){
