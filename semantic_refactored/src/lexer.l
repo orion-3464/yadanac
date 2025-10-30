@@ -131,6 +131,8 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 <BEGIN_END>^{S}+    /* nothing */
 
     /* OFFSIDE RULE */
+
+
 ^{S}+(\n|\#|"(*") {
                         //char *input = yytext;
 
@@ -150,6 +152,7 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                             }
                         }
                    }
+
 
 ^{S}+               {   
                         //char *input = yytext;
@@ -297,6 +300,10 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 <COMMENT>[^*]*              { /*nothing*/ }
 <COMMENT>"*"+[^*)]*         { /*nothing*/ }
 <COMMENT>"*"+")"            { BEGIN(INITIAL); }
+<COMMENT><<EOF>>          	{
+    							fprintf(stderr, "Error: Unterminated comment\n");
+    							yyterminate(); 
+							}
 
     /* NOTHING MATCHED */
 

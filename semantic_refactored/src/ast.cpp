@@ -240,7 +240,7 @@ void Id::sem_analyze()
     STEntry *e = st.lookup(name);
     if (!e)
     {
-        printf("error on id sem analyze");
+        std::cout<<"error on id sem analyze"<<std::endl;
         return;
     }
     expr_type = e->get_type();
@@ -486,13 +486,16 @@ void Header::sem_analyze()
         {
         case INT:
             st.insert(name->get_name(), TYPE_INT, KIND_FUNC, {}, params);
+			st.enterScope();
+			st.insert(name->get_name(), TYPE_INT, KIND_FUNC, {}, params);
             break;
         case BYTE:
             st.insert(name->get_name(), TYPE_BYTE, KIND_FUNC, {}, params);
+			st.enterScope();
+			st.insert(name->get_name(), TYPE_BYTE, KIND_FUNC, {}, params);
             break;
         }
-        
-        st.enterScope();
+
         col_def->sem_analyze();
     }
     else if (is_d_type)
@@ -501,9 +504,13 @@ void Header::sem_analyze()
         {
         case INT:
             st.insert(name->get_name(), TYPE_INT, KIND_FUNC, {}, {});
+			st.enterScope();
+			st.insert(name->get_name(), TYPE_INT, KIND_FUNC, {}, {});
             break;
         case BYTE:
             st.insert(name->get_name(), TYPE_BYTE, KIND_FUNC, {}, {});
+			st.enterScope();
+			st.insert(name->get_name(), TYPE_BYTE, KIND_FUNC, {}, {});
             break;
         }
     }
@@ -539,11 +546,14 @@ void Header::sem_analyze()
         
         st.insert(name->get_name(), VOID, KIND_PROC, {}, params);
         st.enterScope();
+		st.insert(name->get_name(), VOID, KIND_PROC, {}, params);
         col_def->sem_analyze();
     }
     else
     {
         st.insert(name->get_name(), VOID, KIND_PROC, {}, {});
+		st.enterScope();
+		st.insert(name->get_name(), VOID, KIND_PROC, {}, {});
     }
 }
 
@@ -717,7 +727,7 @@ void LValue::sem_analyze()
             //            std::cout << "Lvalue's id type is " << t << std::endl;
             if (e_list.size() > entry->get_dims().size())
             {
-                std::cout << "Dimensions of dereferensing dont match" << std::endl;
+                std::cout << "Dimensions of dereferencing dont match" << std::endl;
                 return;
             }
             else if (e_list.size() == entry->get_dims().size())
@@ -729,6 +739,7 @@ void LValue::sem_analyze()
                     expr_type = TYPE_BYTE;
                     break;
                 case TYPE_INT_ARRAY:
+					//std::cout<<"IM HERE TYPE INT"<<std::endl;
                     expr_type = TYPE_INT;
                     break;
                 default:
@@ -932,14 +943,14 @@ void ProcCall::sem_analyze()
     STEntry *entry = st.lookup(name->get_name());
 
     if (entry->get_kind() != KIND_PROC)
-        printf("error not a proc");
+        std::cout<<"error not a proc"<<std::endl;
 
     if (col_expr)
     {
         std::vector<Expr *> expr_list = col_expr->get_list();
         if (entry->get_params().size() != expr_list.size())
         {
-            printf("error wrong dims of expressions in proc call");
+            std::cout<<"error wrong dims of expressions in proc call"<<std::endl;
             return;
         }
 
@@ -987,14 +998,14 @@ void FuncCall::sem_analyze()
     STEntry *entry = st.lookup(name->get_name());
 
     if (entry->get_kind() != KIND_FUNC)
-        printf("error not a func");
+        std::cout<<"error not a func"<<std::endl;
 
     if (expr)
     {
         std::vector<Expr *> expr_list = expr->get_list();
         if (entry->get_params().size() != expr_list.size())
         {
-            printf("error wrong number of parameters in func call");
+            std::cout<<"error wrong number of parameters in func call"<<std::endl;
             return;
         }
 
@@ -1003,7 +1014,7 @@ void FuncCall::sem_analyze()
         {
             if (p.second != expr_list[i]->get_type())
             {
-                printf("error wrong type in func call");
+                std::cout<<"error wrong type in func call"<<std::endl;
                 return;
             }
             ++i;
@@ -1124,7 +1135,7 @@ void BinOpExpr::sem_analyze()
     ExprType expr1_type = expr1->get_type();
     ExprType expr2_type = expr2->get_type();
     if (expr1_type != expr2_type)
-        printf("INCOMPATIBLE TYPES"); // RAISE ERROR
+        std::cout<<"INCOMPATIBLE TYPES"<<std::endl; // RAISE ERROR
 
     if (op == "+" || op == "-" || op == "/" || op == "*" || op == "%" ||
         op == "&" || op == "|")
@@ -1179,6 +1190,7 @@ void Assign::sem_analyze()
         return;
     }
     expr->check_type(exp_type, exp_type);
+	std::cout<<"Checking types in assign"<<" value 1: "<<*lvalue<<" with type: "<<exp_type<<" value 2: "<<*expr<<" with type: "<<expr->get_type()<<std::endl;
 }
 
 // --------- EXIT CLASS ---------
@@ -1247,6 +1259,7 @@ void Return::sem_analyze()
 {
     ExprType def_type = st.get_def();
     expr->check_type(def_type, def_type);
+	std::cout<<"Return Type must be "<<def_type<<" and it is "<<expr->get_type()<<std::endl;
 }
 
 // --------- IFTHENELSE CLASS ---------
