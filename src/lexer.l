@@ -52,6 +52,9 @@ int at_no = 0;
 int found_begin = 0;
 int num_lines =1;
 int count=0;
+bool flag=0; //initial state, 1 is for "just found a driver" state
+
+int comment_depth = 0; //needed for nested comments
 %}
 
 /* LEXER DEFINITIONS */
@@ -67,8 +70,9 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 /* LEXER STARTING STATES */
 
 %x COMMENT
+%x EOF_AUTO_END
 %s BEGIN_END
-%s DRIVER
+%x AUTO_END_EXTRA
 
 /* LEXER OPTIONS */
 
@@ -94,16 +98,16 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 "byte"      { return T_byte; } 
 "continue"  return T_cont; 
 "decl"      return T_decl; 
-"def"       { BEGIN(DRIVER); ++blocks; return T_def; } 
-"elif"      { BEGIN(DRIVER); ++blocks; return T_elif; } 
-"else"      { BEGIN(DRIVER); ++blocks; return T_else; } 
+"def"       { flag=1; ++blocks; return T_def; } 
+"elif"      { flag=1; ++blocks; return T_elif; } 
+"else"      { flag=1; ++blocks; return T_else; } 
 "end"       return T_end; 
 "exit"      return T_exit; 
 "false"     { return T_false; } 
-"if"        { BEGIN(DRIVER); ++blocks; return T_if; } 
+"if"        { flag=1; ++blocks; return T_if; } 
 "is"        return T_is; 
 "int"       { return T_int; } 
-"loop"      { BEGIN(DRIVER); ++blocks; return T_loop; }
+"loop"      { flag=1; ++blocks; return T_loop; }
 "not"       return T_not;
 "or"        { yylval->op = new std::string(yytext); return T_or; }
 "ref"       return T_ref; 
@@ -130,21 +134,73 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
 
 <BEGIN_END>^{S}+    /* nothing */
 
+
+<AUTO_END_EXTRA>{S}+ { 
+    int spaces = 0;
+    for(int i = 0; i < yyleng; i++) 
+        spaces += (yytext[i] == '\t') ? TAB_LEN : 1; 
+
+    int saved_line = yyline;
+    int saved_column = yycolumn; 
+
+    current_indent = spaces;
+    
+    // We should already know indent < stack.top().
+    // We just need to pop and see where we land.
+    int current_level = (!indent_stack.empty()) ? indent_stack.top() : 0;
+    if (current_level>current_indent){
+    // Pop the stack to see the *next* level
+    indent_stack.pop();
+	int current_level = (!indent_stack.empty()) ? indent_stack.top() : 0;
+
+
+    // Set location for this T_auto_end token
+    yylloc->first_line = saved_line;
+    yylloc->first_column = saved_column;
+    yylloc->last_line = saved_line;
+    yylloc->last_column = saved_column;
+    ++at_no;
+
+    
+    if (current_level > current_indent) {
+        // We are still more indented than the target.
+        // Need to pop *another* level.
+        yyless(0); // Put whitespace back
+        
+        // Restore location info since yyless(0) resets it
+        yyline = saved_line;
+        yycolumn = saved_column;
+        
+        return T_auto_end; // Stay in AUTO_END_EXTRA
+    } 
+    else if (current_level == current_indent) {
+        printf("I poped a level and now i'm going back to normal\n");// We matched the target indent level. We are done.
+        BEGIN(INITIAL); // Go back to normal
+        return T_auto_end;
+    } 
+    else { // current_level < current_indent
+        // Error: Dedented to an invalid level that was never on the stack
+        printf("\033[1;31m"); 
+        printf("\n Wrong identation on line %d \n", yylineno);
+        printf("\033[0m");
+        yyterminate();
+    }
+	}
+	else {BEGIN(INITIAL); printf("im here/n");}
+}
     /* OFFSIDE RULE */
 ^{S}+(\n|\#|"(*") {
                         for(int i=0; i < yyleng; ++i) {
                             if(yytext[i]=='(') {
-                                unput('*');
-                                unput('(');
-                                yyless(0);
+                                yyless(i);
                                 break;
                             }
                             else if(yytext[i]=='#'){
-                                unput('#');
+                                yyless(i);
                                 break;
                             }
                             else if(yytext[i]=='\n') {
-                                unput('\n'); 
+                                yyless(i); 
                                 break;
                             }
                         }
@@ -163,9 +219,10 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                         int current_level = (!indent_stack.empty()) ? indent_stack.top() : 0;
                         
                         if(current_indent > current_level) {
-                            if(YY_START == DRIVER) {
+						printf("case1\n");
+                            if(flag==1) {
                                 indent_stack.push(current_indent);
-                                BEGIN(INITIAL);
+                                flag=0;
                             }
                             else if(current_level==0) {
                                 /*nothing, because this is the case where def main has indetation!=0*/
@@ -178,7 +235,8 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                             }
                         }
                                     
-                        else if(current_indent < current_level && YY_START == INITIAL) {
+                        else if((current_indent < current_level) && flag==0) {
+							printf("case 2\n");
                             indent_stack.pop();
                             int current = (!indent_stack.empty()) ? indent_stack.top() : 0;
                             
@@ -188,7 +246,6 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                                 // restore location after yyless(0)
                                 yyline = saved_line;
                                 yycolumn = saved_column;
-                                unput('\n');
                                 count=1;
                                 ++at_no;
 
@@ -196,6 +253,8 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                                 yylloc->first_column = saved_column;
                                 yylloc->last_line = saved_line;
                                 yylloc->last_column = saved_column;
+								
+								BEGIN(AUTO_END_EXTRA);
 
                                 return T_auto_end;
                             }
@@ -217,17 +276,28 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                         }
 
                         else {
-                            if(YY_START == DRIVER) {	
+							printf("case 3");
+                            if(flag==1) {	
                                 if(current_indent<current_level) {
                                     yyless(0);
 
                                     yyline = saved_line;
                                     yycolumn = saved_column;      
 
-                                    unput('\n');
                                     count=1;
+									flag=0;
+									BEGIN(AUTO_END_EXTRA);
+									++at_no;
+
+                               		yylloc->first_line = saved_line;
+                                	yylloc->first_column = saved_column;
+                                	yylloc->last_line = saved_line;
+                                	yylloc->last_column = saved_column;
+
+									return T_auto_end;
                                 }
-                                BEGIN(INITIAL);
+                                flag=0;
+
                                 ++at_no;
 
                                 yylloc->first_line = saved_line;
@@ -235,47 +305,68 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                                 yylloc->last_line = saved_line;
                                 yylloc->last_column = saved_column;
 
-                                return T_auto_end;
+                               return T_auto_end;
                             }
                             
                             else {
-                            /*nothing, because it means (current_indent==current_level && !flag), so we are inside a block with correct indetation*/ 
+                            /*nothing, because it means (current_indent==current_level && INITIAL STATE), so we are inside a block with correct indetation*/ 
                             }
                         }
                     }
 
 <BEGIN_END><<EOF>>      yyterminate();
 
-<<EOF>> { 	
-            if(indent_stack.empty()) {
-                // all done
-                return T_eof;
-            }
-            indent_stack.pop();
-            
-            if(!indent_stack.empty()){
-                yyless(0);
-            }
-            ++at_no;
-
-            yylloc->first_line = yyline;
-            yylloc->first_column = yycolumn;
-            yylloc->last_line = yyline;
-            yylloc->last_column = yycolumn;
-            
-            return T_auto_end; 
-	 }
-
-{S}                         { /*nothing*/ }
-
     /* COMMENT RULES */
 
 \#.*                      { /* ignore one-line comments */ }
 
-"(*"                        { BEGIN(COMMENT); }
-<COMMENT>[^*]*              { /*nothing*/ }
-<COMMENT>"*"+[^*)]*         { /*nothing*/ }
-<COMMENT>"*"+")"            { BEGIN(INITIAL); }
+"(*"                        { BEGIN(COMMENT); comment_depth = 1; }
+
+<COMMENT>"(*"               { comment_depth++; /* Found a nested start: increase depth */ }
+
+<COMMENT>"*)"               { 
+                                comment_depth--;
+                                if (comment_depth == 0) {
+                                    BEGIN(INITIAL); /* Depth is zero: exit comment state */
+                                }
+                                /* If depth > 0, we remain in COMMENT state */
+                            }
+
+<COMMENT>[^*)]+             { /* Consume the bulk of the text efficiently */ }
+
+<COMMENT><<EOF>>            { 
+                                fprintf(stderr, "Error: Unclosed nested comment (started on line %d).\n", yylineno);
+                                yyterminate();
+                            }
+<COMMENT>.                  { /* Catch stray characters not handled above, like '*' or ')' alone */ }
+
+<EOF_AUTO_END>. {
+				  		if(indent_stack.empty()) {
+                			// all done
+                			return T_eof;
+            			}
+            			indent_stack.pop();
+            
+            			if(!indent_stack.empty()){
+                			yyless(0);
+            			}
+            			++at_no;
+
+            			yylloc->first_line = yyline;
+            			yylloc->first_column = yycolumn;
+            			yylloc->last_line = yyline;
+            			yylloc->last_column = yycolumn;
+            
+           				return T_auto_end; 
+				}
+
+<<EOF>> {
+			BEGIN(EOF_AUTO_END);
+			unput('4');
+	 	}
+
+{S}                         { /*nothing*/ }
+
 
     /* NOTHING MATCHED */
 

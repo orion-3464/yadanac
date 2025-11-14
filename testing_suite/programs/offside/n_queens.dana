@@ -1,5 +1,4 @@
 def main
-
     var size_main is int
 
     def printBoard: board_param as byte[][20], n_param as int
@@ -97,13 +96,14 @@ def main
         else :
             writeString: "No solution exists.\n"
 
-    # writeString: "Enter board size: "
+    writeString: "Enter board size: "
     size_main := readInteger()
     if size_main > 20 :
         writeString: "Warning: Board size capped at 20 due to program limits.\n"
-        (*size_main := 20
+        size_main := 20
     if size_main < 1 :
         writeString: "Info: Board size must be at least 1. Setting to 1.\n"
         size_main := 1   
-    if size_main > 0 : solveNQueens: size_main
-    else: writeString: "No solution exists for non-positive size.\n"*)
+	if size_main > 0 : solveNQueens: size_main
+    (*else: writeString: "No solution exists for non-positive size.\n"*)
+	#gsdlkgl

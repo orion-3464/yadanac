@@ -16,3 +16,4 @@ def main
 
   reverse: "\n!dlrow olleH"
   writeString: r
+  r:=0
