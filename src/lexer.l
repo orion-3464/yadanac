@@ -345,8 +345,15 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
                 			// all done
                 			return T_eof;
             			}
-            			indent_stack.pop();
             
+						if(flag==1) {
+							flag=0;
+							yyless(0);
+							return T_auto_end;
+						}
+
+						indent_stack.pop();
+
             			if(!indent_stack.empty()){
                 			yyless(0);
             			}
@@ -356,9 +363,12 @@ ESC         ({ESC_SIMPLE}|{ESC_HEX})
             			yylloc->first_column = yycolumn;
             			yylloc->last_line = yyline;
             			yylloc->last_column = yycolumn;
-            
+                        
+						printf("1 extra auto_end\n");
+
            				return T_auto_end; 
 				}
+
 
 <<EOF>> {
 			BEGIN(EOF_AUTO_END);

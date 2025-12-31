@@ -12,7 +12,7 @@ var a is int var b is int
         end
         else:
             begin 
-            ifib: n-1, a
+            fib: n-1, a
             fib: n-2, b
             result := a + b
         end end
